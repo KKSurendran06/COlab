@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import DrawingMenu from "./DrawingMenu";
+import WhiteBoard from "./WhiteBoard";
 
 interface BoardContainerProps {
   room: any;
@@ -20,6 +21,7 @@ const BoardContainer: React.FC<BoardContainerProps> = (props) => {
   return (
     <section className='relative flex flex-col xl:flex-row gap-1 bg-white h-screen'>
       <DrawingMenu drawingPen={drawingPen} setDrawingPen={setDrawingPen} />
+      <WhiteBoard drawingPen={drawingPen} room={room} />
     </section>
   );
 };
