@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import "./App.css";
 import { getData } from "./utils/storage";
-import Chat from "./components/Chat";
 import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   const { user } = useAuth();
@@ -18,24 +17,15 @@ function App() {
   }, [user]);
 
   if (!user) {
-    return <Login />; // Show login page if user is not authenticated
+    return <Login />;
   }
 
-  return (
-    <div className="p-4 w-72">
-      <h2 className="text-lg font-bold">OLabs Tracker</h2>
-      {experiment ? (
-        <div>
-          <p>🔬 Subject: {experiment.sub}</p>
-          <p>🧪 Experiment: {experiment.sim}</p>
-          <p>📜 Step: {experiment.cnt}</p>
-        </div>
-      ) : (
-        <p>Loading experiment details...</p>
-      )}
-      <Chat />
-    </div>
-  );
+  // Ensure experiment is loaded before rendering Dashboard
+  if (!experiment) {
+    return <div className="p-6 text-center">Loading experiment details...</div>;
+  }
+
+  return <Dashboard experiment={experiment} />;
 }
 
 export default App;

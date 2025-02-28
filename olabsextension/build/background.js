@@ -1,1 +1,1 @@
-import{g as a,b as s,s as t,c as i,d}from"./assets/firebase-C2dUYMaC.js";chrome.tabs.onUpdated.addListener(async()=>{const e=await a("experimentDetails");e&&(await s(i(d,"experiments"),{sub:e.sub,sim:e.sim,cnt:e.cnt,timestamp:t()}),console.log("User added to experiment tracking:",e))});
+import{g as a,k as t,e as s,h as i,l as m}from"./assets/firebase-BDNkGCGc.js";chrome.tabs.onUpdated.addListener(async()=>{const e=await a("experimentDetails");e&&(await t(s(i,"experiments"),{sub:e.sub,sim:e.sim,cnt:e.cnt,timestamp:m()}),console.log("User added to experiment tracking:",e))});
