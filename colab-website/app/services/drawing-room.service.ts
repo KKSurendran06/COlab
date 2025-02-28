@@ -1,6 +1,6 @@
 import { supabase } from "../lib/initSupabase";
 
-const DRAWING_ROOM_TABLE = "drawing-rooms"; 
+const DRAWING_ROOM_TABLE = "community-rooms"; 
 
 export const createDrawingRoom = async (
     name: string,
