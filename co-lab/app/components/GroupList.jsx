@@ -46,7 +46,7 @@ export default function GroupList({ onSelectGroup }) {
 
   return (
     <div className="bg-white rounded-lg shadow h-full flex flex-col overflow-hidden">
-      <div className="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-10">
+      <div className="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-[5]">
         <h2 className="text-xl font-semibold">Available Groups</h2>
         <p className="text-sm text-blue-100 mt-1">Join or create research collaboration groups</p>
       </div>

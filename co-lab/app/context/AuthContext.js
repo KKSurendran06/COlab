@@ -8,7 +8,8 @@ import {
   createUserWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const AuthContext = createContext({});
 
@@ -17,13 +18,33 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userPoints, setUserPoints] = useState(0);
+
+  const fetchUserPoints = async (userId) => {
+    try {
+      const pointsRef = doc(db, "points", userId);
+      const pointsDoc = await getDoc(pointsRef);
+      
+      if (pointsDoc.exists()) {
+        setUserPoints(pointsDoc.data().stars || 0);
+      } else {
+        // If document doesn't exist yet, initialize it
+        await setDoc(pointsRef, { stars: 0 });
+        setUserPoints(0);
+      }
+    } catch (error) {
+      console.error("Error fetching user points:", error);
+    }
+  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        fetchUserPoints(currentUser.uid);
       } else {
         setUser(null);
+        setUserPoints(0);
       }
       setLoading(false);
     });
@@ -35,17 +56,29 @@ export const AuthContextProvider = ({ children }) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = (email, password) => {
-    return createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (email, password) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Initialize points document for new user
+      await setDoc(doc(db, "points", userCredential.user.uid), {
+        stars: 0
+      });
+      
+      return userCredential;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = async () => {
     setUser(null);
+    setUserPoints(0);
     await signOut(auth);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, userPoints, fetchUserPoints }}>
       {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );
