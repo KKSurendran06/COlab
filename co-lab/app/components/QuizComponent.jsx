@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { db, rtdb } from '../firebase';
 import { ref, onValue, set, push, remove, update, onDisconnect, get } from 'firebase/database';
@@ -19,10 +18,10 @@ export default function LiveQuiz({ groupId, topic, userId }) {
   const [userReady, setUserReady] = useState(false);
   const [readyUsers, setReadyUsers] = useState({});
   const [countdownToStart, setCountdownToStart] = useState(null);
-
+  
   // Get user data from auth (assuming auth is set up)
   const currentUser = userId || 'anonymous';
-
+  
   // Listen for quiz questions from Firestore
   useEffect(() => {
     const quizCollection = collection(db, 'quizzes', groupId, 'questions');
@@ -36,13 +35,13 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     
     return () => unsubscribe();
   }, [groupId]);
-
+  
   // Listen for quiz status and participants from Realtime DB
   useEffect(() => {
     const quizStatusRef = ref(rtdb, `groups/${groupId}/quiz`);
     const participantsRef = ref(rtdb, `groups/${groupId}/participants`);
     const readyUsersRef = ref(rtdb, `groups/${groupId}/readyUsers`);
-
+    
     const statusHandler = onValue(quizStatusRef, (snapshot) => {
       const data = snapshot.val() || {};
       setQuizStatus(data.status || 'inactive');
@@ -51,64 +50,83 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       setShowResults(data.showResults || false);
       setCountdownToStart(data.countdownToStart || null);
     });
-
+    
+    // Fixed participants handler to properly get all users
     const participantsHandler = onValue(participantsRef, (snapshot) => {
       const data = snapshot.val() || {};
-      setParticipants(Object.values(data));
+      // Convert the object to an array of participants
+      const participantsArray = Object.values(data);
+      setParticipants(participantsArray);
+      console.log('Current participants:', participantsArray);
     });
-
+    
     // Listen for ready users
     const readyUsersHandler = onValue(readyUsersRef, (snapshot) => {
       const data = snapshot.val() || {};
       setReadyUsers(data);
     });
-
+    
     // Listen for score updates
     const scoresRef = ref(rtdb, `groups/${groupId}/scores`);
     const scoresHandler = onValue(scoresRef, (snapshot) => {
       const data = snapshot.val() || {};
       setScores(data);
     });
-
+    
     // Listen for user answers
     const answersRef = ref(rtdb, `groups/${groupId}/answers`);
     const answersHandler = onValue(answersRef, (snapshot) => {
       const data = snapshot.val() || {};
       setUserAnswers(data);
     });
-
+    
     // Join the quiz room
     const joinQuiz = async () => {
       const userRef = ref(rtdb, `groups/${groupId}/participants/${currentUser}`);
+      
+      // Add unique information to make sure each user is distinct
       await set(userRef, {
         userId: currentUser,
         joinedAt: new Date().toISOString(),
         displayName: `User-${currentUser.substring(0, 5)}`
       });
-
-      // Clean up on disconnect (using imported onDisconnect)
+      
+      // Clean up on disconnect
       onDisconnect(userRef).remove();
       
       // Also remove from ready users on disconnect
       const readyUserRef = ref(rtdb, `groups/${groupId}/readyUsers/${currentUser}`);
       onDisconnect(readyUserRef).remove();
+      
+      console.log(`User ${currentUser} joined the quiz`);
     };
-
+    
     joinQuiz();
-
+    
     return () => {
       statusHandler();
       participantsHandler();
       scoresHandler();
       answersHandler();
       readyUsersHandler();
+      
+      // Clean up by removing the user when component unmounts
+      const userRef = ref(rtdb, `groups/${groupId}/participants/${currentUser}`);
+      remove(userRef);
+      
+      const readyUserRef = ref(rtdb, `groups/${groupId}/readyUsers/${currentUser}`);
+      remove(readyUserRef);
     };
   }, [groupId, currentUser]);
-
+  
   // Check if enough users are ready and start countdown
   useEffect(() => {
     if (quizStatus === 'ready') {
       const readyCount = Object.keys(readyUsers).length;
+      const participantCount = participants.length;
+      
+      console.log(`Ready users: ${readyCount}, Participants: ${participantCount}`);
+      
       // Modified this condition to check for at least 2 ready users
       if (readyCount >= 2 && countdownToStart === null) {
         // Start 5-second countdown
@@ -117,8 +135,8 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         });
       }
     }
-  }, [readyUsers, quizStatus, groupId, countdownToStart]);
-
+  }, [readyUsers, quizStatus, groupId, countdownToStart, participants.length]);
+  
   // Countdown effect
   useEffect(() => {
     if (countdownToStart !== null && countdownToStart > 0) {
@@ -134,7 +152,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       startQuiz();
     }
   }, [countdownToStart, groupId]);
-
+  
   // Timer effect for questions
   useEffect(() => {
     if (quizStatus === 'active' && timeLeft > 0) {
@@ -156,7 +174,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       nextQuestion();
     }
   }, [timeLeft, quizStatus, groupId]);
-
+  
   // Toggle user ready status
   async function toggleReady() {
     const newReadyStatus = !userReady;
@@ -175,7 +193,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     // Log the ready status for debugging
     console.log(`User ${currentUser} is now ${newReadyStatus ? 'ready' : 'not ready'}`);
   }
-
+  
   // Generate a new quiz (can be called by any user when quiz is inactive)
   async function generateNewQuiz() {
     setLoading(true);
@@ -213,7 +231,6 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         4. explanation (string explaining why the answer is correct)
         
         Only return the JSON without any additional text or formatting.`;
-
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC5JJ8UDOsoyVTIGZDFwvUdF0zV6liVHfs`,
         {
@@ -253,7 +270,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     
     setLoading(false);
   }
-
+  
   // Start the quiz
   async function startQuiz() {
     await update(ref(rtdb, `groups/${groupId}/quiz`), {
@@ -274,7 +291,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     
     console.log("Quiz started!");
   }
-
+  
   // Submit an answer for the current question
   async function handleAnswer(optionIndex) {
     if (quizStatus !== 'active' || selectedOption !== null) return;
@@ -298,7 +315,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       console.log(`User ${currentUser} got question ${currentQuestion} correct! New score: ${userScore + 1}`);
     }
   }
-
+  
   // Go to the next question
   async function nextQuestion() {
     if (currentQuestion < quizData.length - 1) {
@@ -315,7 +332,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       });
     }
   }
-
+  
   // Display user score during quiz
   function renderUserScore() {
     const userScore = scores[currentUser] || 0;
@@ -327,7 +344,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       </div>
     );
   }
-
+  
   // Render scoreboard (simplified)
   function renderScoreboard() {
     const sortedScores = Object.entries(scores)
@@ -337,7 +354,6 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         score,
         name: participants.find(p => p.userId === userId)?.displayName || userId.substring(0, 5)
       }));
-
     return (
       <div className="bg-white p-4 rounded-lg shadow">
         <h3 className="text-xl font-bold mb-4">Points</h3>
@@ -355,14 +371,14 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       </div>
     );
   }
-
+  
   // Render ready users indicators
   function renderReadyStatus() {
     const readyCount = Object.keys(readyUsers).length;
     
     return (
       <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">Ready Status</h3>
+        <h3 className="text-lg font-semibold mb-2">Ready Status ({readyCount}/{participants.length})</h3>
         <div className="flex flex-wrap gap-2 mb-4">
           {participants.map(participant => {
             const isReady = readyUsers[participant.userId];
@@ -391,7 +407,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
           </button>
           
           <div className="text-sm text-gray-600">
-            {readyCount}/2 users ready
+            {readyCount}/{participants.length} users ready
           </div>
         </div>
         
@@ -405,7 +421,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       </div>
     );
   }
-
+  
   return (
     <div className="max-w-4xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Live Quiz: {topic}</h2>
