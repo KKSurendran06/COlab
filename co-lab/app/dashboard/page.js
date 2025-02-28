@@ -69,16 +69,16 @@ export default function Dashboard() {
   }
   
   return (
-    <div className="min-h-screen bg-[#36393F] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Navigation */}
-      <nav className="bg-[#202225] shadow-md z-10 border-b border-[#2D2F32]">
+      <nav className="bg-[#0066cc] shadow-md z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-white">Co-Lab AI</h1>
               <button
                 onClick={toggleSidebar}
-                className="ml-4 p-2 text-gray-300 hover:text-white md:hidden"
+                className="ml-4 p-2 text-white hover:bg-[#005bb8] md:hidden"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
@@ -86,10 +86,10 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="flex items-center">
-              <span className="text-gray-300 mr-4">{user.email}</span>
+              <span className="text-white mr-4">{user.email}</span>
               <button
                 onClick={handleLogout}
-                className="bg-[#7289DA] hover:bg-[#5E77D4] text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="bg-white hover:bg-gray-100 text-[#0066cc] px-4 py-2 rounded-md text-sm font-medium"
               >
                 Logout
               </button>
@@ -100,38 +100,33 @@ export default function Dashboard() {
       
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Only show when a group is selected */}
-        {selectedGroup && (
-          <aside 
-            className={`bg-[#2F3136] border-r border-[#222327] w-64 shadow-lg flex flex-col z-10 
-                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-                     md:relative md:translate-x-0 
-                     transition-transform duration-300 ease-in-out
-                     absolute inset-y-0 left-0`}
-          >
-            <div className="p-4 border-b border-[#222327]">
-              <h2 className="text-lg font-semibold text-white">Group Details</h2>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4">
-              {/* User's Groups */}
-              <UserGroups 
-                onSelectGroup={handleGroupSelect} 
-                activeGroupId={selectedGroup?.id} 
-              />
-            </div>
-          </aside>
-        )}
+        {/* Left Sidebar - User Groups */}
+        <aside 
+          className={`bg-gray-50 border-r border-gray-200 w-64 shadow-lg flex flex-col z-10 
+                   ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+                   md:relative md:translate-x-0 
+                   transition-transform duration-300 ease-in-out
+                   absolute inset-y-0 left-0`}
+        >
+          <div className="flex-1 overflow-y-auto p-2">
+            {/* User's Groups */}
+            <UserGroups 
+              onSelectGroup={handleGroupSelect} 
+              activeGroupId={selectedGroup?.id} 
+              isDarkMode={false}
+            />
+          </div>
+        </aside>
         
-        {/* Main area with tabs */}
+        {/* Main area with tabs or group creation */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {selectedGroup ? (
             <>
               {/* Tabs */}
-              <div className="bg-[#2F3136] shadow-sm px-4 flex border-b border-[#222327] items-center">
+              <div className="bg-white shadow-sm px-4 flex border-b border-gray-200 items-center">
                 <button
                   onClick={() => setSelectedGroup(null)}
-                  className="py-4 px-4 font-medium text-sm text-[#7289DA] flex items-center mr-4 hover:bg-[#393C43] rounded-md"
+                  className="py-4 px-4 font-medium text-sm text-[#0066cc] flex items-center mr-4 hover:bg-gray-50 rounded-md"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -140,19 +135,19 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab('chat')}
-                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'chat' ? 'text-white border-b-2 border-[#7289DA]' : 'text-gray-300 hover:text-white'}`}
+                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'chat' ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-gray-600 hover:text-[#0066cc]'}`}
                 >
                   Group Chat
                 </button>
                 <button
                   onClick={() => setActiveTab('whiteboard')}
-                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'whiteboard' ? 'text-white border-b-2 border-[#7289DA]' : 'text-gray-300 hover:text-white'}`}
+                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'whiteboard' ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-gray-600 hover:text-[#0066cc]'}`}
                 >
                   Whiteboard
                 </button>
                 <button
                   onClick={() => setActiveTab('video')}
-                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'video' ? 'text-white border-b-2 border-[#7289DA]' : 'text-gray-300 hover:text-white'}`}
+                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'video' ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-gray-600 hover:text-[#0066cc]'}`}
                 >
                   Video Call
                 </button>
@@ -165,7 +160,7 @@ export default function Dashboard() {
               </div>
               
               {/* Content area */}
-              <div className="flex-1 overflow-hidden bg-[#36393F]">
+              <div className="flex-1 overflow-hidden bg-white">
                 {activeTab === 'chat' && <GroupChat group={selectedGroup} />}
                 {activeTab === 'whiteboard' && <Whiteboard groupId={selectedGroup.id} />}
                 {activeTab === 'video' && <VideoCall groupId={selectedGroup.id} />}
@@ -173,13 +168,13 @@ export default function Dashboard() {
               </div>
             </>
           ) : (
-            <div className="flex-1 bg-[#36393F]">
+            <div className="flex-1 bg-gray-50">
               <div className="max-w-6xl mx-auto px-4 py-8">
                 <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-2xl font-bold text-white">Research Collaboration Groups</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">Research Collaboration Groups</h1>
                   <button 
                     onClick={handleCreateGroup}
-                    className="bg-[#7289DA] hover:bg-[#5E77D4] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
+                    className="bg-[#0066cc] hover:bg-[#005bb8] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -189,42 +184,14 @@ export default function Dashboard() {
                 </div>
                 
                 {/* Search & Available Groups */}
-                <div className="bg-[#2F3136] rounded-lg shadow-md overflow-hidden">
-                  <div className="p-4 bg-[#202225] border-b border-[#222327]">
-                    <div className="relative flex w-full">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search groups by name or subject..."
-                        className="pl-10 w-full py-2 px-4 border border-[#222327] rounded-lg bg-[#40444B] focus:ring-[#7289DA] focus:border-[#7289DA] text-white placeholder-gray-400"
-                      />
-                    </div>
-                  </div>
-                  
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">                  
                   <div className="p-6">
-                    <div className="mb-6">
-                      <h2 className="text-lg font-semibold text-white mb-4">Your Groups</h2>
-                      <UserGroups 
-                        onSelectGroup={handleGroupSelect} 
-                        activeGroupId={selectedGroup?.id} 
-                        isDarkMode={true}
-                      />
-                    </div>
-                    
-                    <div>
-                      <h2 className="text-lg font-semibold text-white mb-4">Available Groups</h2>
-                      <GroupList 
-                        onSelectGroup={handleGroupSelect}
-                        searchQuery={searchQuery} 
-                        isDarkMode={true}
-                      />
-                    </div>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Available Groups</h2>
+                    <GroupList 
+                      onSelectGroup={handleGroupSelect}
+                      searchQuery={searchQuery} 
+                      isDarkMode={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -233,12 +200,9 @@ export default function Dashboard() {
         </main>
         
         {/* Online Users Panel */}
-        <aside className="bg-[#2F3136] w-64 shadow-lg flex flex-col z-10 border-l border-[#222327]">
-          <div className="p-4 border-b border-[#222327] flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-white">Online Users</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <OnlineUsers isDarkMode={true} />
+        <aside className="bg-white w-100 shadow-lg flex flex-col z-10 border-l border-gray-200">
+          <div className="flex-1 overflow-y-auto p-2">
+            <OnlineUsers isDarkMode={false} />
           </div>
         </aside>
       </div>

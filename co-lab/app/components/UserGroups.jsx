@@ -22,7 +22,7 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
   const countBg = isDarkMode ? 'bg-[#40444B] text-gray-300' : 'bg-gray-200 text-gray-700';
   
   return (
-    <div className={`${bgColor} rounded-lg shadow p-4 mb-6 border border-[#222327]`}>
+    <div className={`${bgColor} rounded-lg shadow p-2 mb-6 border`}>
       <h3 className={`text-lg font-semibold mb-3 ${textColor}`}>Your Groups</h3>
       
       {userGroups.length === 0 ? (
@@ -43,7 +43,7 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
                 <div className={`w-8 h-8 rounded-full ${avatarBg} flex items-center justify-center text-white mr-2`}>
                   {group.name.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-medium truncate">{group.name}</span>
+                <span className="text-sm font-medium text-black truncate">{group.name}</span>
               </div>
               <span className={`text-xs ${countBg} rounded-full px-2 py-1`}>
                 {group.membersCount}

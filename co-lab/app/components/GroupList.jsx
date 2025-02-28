@@ -67,23 +67,6 @@ export default function GroupList({ onSelectGroup }) {
             className="pl-10 w-full py-2 px-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
         </div>
-        <button 
-          onClick={() => setIsCreatingGroup(!isCreatingGroup)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm flex items-center ${
-            isCreatingGroup 
-              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isCreatingGroup ? 'text-gray-600' : 'text-blue-200'} mr-1`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {isCreatingGroup ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            )}
-          </svg>
-          {isCreatingGroup ? 'Cancel' : 'Create Group'}
-        </button>
       </div>
 
       {isCreatingGroup && (

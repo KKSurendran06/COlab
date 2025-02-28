@@ -21,9 +21,9 @@ export default function OnlineUsers() {
   }, []);
   
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 border border-gray-100">
+    <div className="bg-grey rounded-lg shadow-md p-2">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+        <h3 className="text-lg font-semibold flex items-center text-black">
           <span className="bg-green-100 text-green-600 p-1 rounded-md mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -35,20 +35,6 @@ export default function OnlineUsers() {
             {onlineUsers.length}
           </span>
         </h3>
-        <button 
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          {isExpanded ? (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <polyline points="18 15 12 9 6 15"></polyline>
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          )}
-        </button>
       </div>
       
       {isLoading ? (
@@ -59,13 +45,13 @@ export default function OnlineUsers() {
         <>
           {onlineUsers.length === 0 ? (
             <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <p className="text-gray-500 text-sm">No users online</p>
-              <p className="text-gray-400 text-xs mt-1">Users will appear here when they come online</p>
+              <p className="text-black text-sm">No users online</p>
+              <p className="text-black text-xs mt-1">Users will appear here when they come online</p>
             </div>
           ) : (
             <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
               {onlineUsers.map(user => (
-                <li key={user.uid} className="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <li key={user.uid} className="flex items-center p-2 rounded-lg text-black hover:bg-gray-50 transition-colors">
                   <div className="relative">
                     {user.photoURL ? (
                       <img 
