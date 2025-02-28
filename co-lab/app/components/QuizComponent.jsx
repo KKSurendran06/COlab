@@ -127,8 +127,8 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       
       console.log(`Ready users: ${readyCount}, Participants: ${participantCount}`);
       
-      // Modified this condition to check for at least 2 ready users
-      if (readyCount >= 2 && countdownToStart === null) {
+      // Modified this condition to allow starting with just 1 ready user
+      if (readyCount >= 1 && countdownToStart === null) {
         // Start 5-second countdown
         update(ref(rtdb, `groups/${groupId}/quiz`), {
           countdownToStart: 5
@@ -422,6 +422,23 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     );
   }
   
+  // Add a force start button for single user
+  function renderForceStartButton() {
+    return (
+      <div className="mt-4 text-center">
+        <button
+          onClick={startQuiz}
+          className="px-4 py-2 bg-purple-500 text-white rounded-md"
+        >
+          Start Quiz Now
+        </button>
+        <p className="text-sm text-gray-500 mt-2">
+          Use this button to start the quiz immediately without waiting for other participants.
+        </p>
+      </div>
+    );
+  }
+  
   return (
     <div className="max-w-4xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Live Quiz: {topic}</h2>
@@ -440,6 +457,9 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       
       {/* Ready status (only show when quiz is ready) */}
       {quizStatus === 'ready' && renderReadyStatus()}
+      
+      {/* Force start button for single player */}
+      {quizStatus === 'ready' && participants.length <= 1 && renderForceStartButton()}
       
       {/* User Score (only show during active quiz) */}
       {quizStatus === 'active' && renderUserScore()}
@@ -468,7 +488,11 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       ) : quizStatus === 'ready' && countdownToStart === null ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <p className="mb-4">Quiz is ready! Waiting for participants to be ready.</p>
-          <p className="text-sm text-gray-500">Quiz will start automatically when at least 2 users are ready.</p>
+          <p className="text-sm text-gray-500">
+            {participants.length <= 1 
+              ? "You can start the quiz yourself with the 'Start Quiz Now' button."
+              : "Quiz will start automatically when at least one user is ready."}
+          </p>
         </div>
       ) : quizStatus === 'active' && quizData.length > 0 ? (
         <div className="bg-white p-6 rounded-lg shadow-md">
