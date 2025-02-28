@@ -1,18 +1,25 @@
-import { useEffect, useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-import './App.css'
-import { getData } from './utils/storage';
-import Chat from './components/Chat';
+import { useEffect, useState } from "react";
+import "./App.css";
+import { getData } from "./utils/storage";
+import Chat from "./components/Chat";
+import { useAuth } from "./context/AuthContext";
+import Login from "./pages/Login";
 
 function App() {
+  const { user } = useAuth();
   const [experiment, setExperiment] = useState<any>(null);
 
   useEffect(() => {
-    getData("experimentDetails").then((data) => {
-      if (data) setExperiment(data);
-    });
-  }, []);
+    if (user) {
+      getData("experimentDetails").then((data) => {
+        if (data) setExperiment(data);
+      });
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Login />; // Show login page if user is not authenticated
+  }
 
   return (
     <div className="p-4 w-72">
@@ -31,4 +38,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

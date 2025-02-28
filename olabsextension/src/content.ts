@@ -1,4 +1,8 @@
-import { storeData } from "../utils/storage";
+function storeData(key: string, value: any) {
+  chrome.storage.local.set({ [key]: value }, () => {
+    console.log(`Stored ${key}:`, value);
+  });
+}
 
 function extractExperimentDetails() {
   const url = window.location.href;

@@ -6,7 +6,8 @@
     "permissions": ["storage", "activeTab"],
     "host_permissions": ["https://www.olabs.edu.in/*"],
     "background": {
-      "service_worker": "background.js"
+      "service_worker": "background.js",
+      "type": "module"
     },
     "content_scripts": [
       {
@@ -15,8 +16,7 @@
       }
     ],
     "action": {
-      "default_popup": "index.html",
-      "default_icon": "icon.png"
+      "default_popup": "index.html"
     }
   }
   

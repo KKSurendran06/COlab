@@ -1,6 +1,6 @@
-import { db } from "../firebase/firebase";
+import { db } from "./firebase/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getData } from "../utils/storage";
+import { getData } from "./utils/storage";
 
 chrome.tabs.onUpdated.addListener(async () => {
   const details = await getData("experimentDetails");
