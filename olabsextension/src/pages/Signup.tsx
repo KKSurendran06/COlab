@@ -11,7 +11,7 @@ export default function Signup() {
     try {
       await signup(email, password);
     } catch (err) {
-        console.log(err);
+      console.log(err);
       setError("Error creating account");
     }
   };
