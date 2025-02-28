@@ -186,7 +186,6 @@ export default function Dashboard() {
                 {/* Search & Available Groups */}
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">                  
                   <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Available Groups</h2>
                     <GroupList 
                       onSelectGroup={handleGroupSelect}
                       searchQuery={searchQuery} 
