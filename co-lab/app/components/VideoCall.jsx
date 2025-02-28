@@ -201,14 +201,20 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       const data = snapshot.val();
       
       // Check if this offer is for us
-      if (data.target !== user.uid) return;
+      if (!data || data.target !== user.uid) return;
       
       console.log(`Received offer from ${data.sender}:`, data);
+      
+      // Validate offer
+      if (!data.offer || !data.offer.type) {
+        console.error("Invalid offer received:", data.offer);
+        return;
+      }
       
       // Create or get peer connection
       const pc = createPeerConnection(data.sender, false);
       
-      // Set remote description
+      // Set remote description with validation
       pc.setRemoteDescription(new RTCSessionDescription(data.offer))
         .then(() => {
           console.log(`Creating answer for ${data.sender}`);
@@ -237,10 +243,16 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     const handleAnswer = (snapshot) => {
       const data = snapshot.val();
       
-      // Check if this answer is for us
-      if (data.target !== user.uid) return;
+      // Check if this answer is for us and validate
+      if (!data || data.target !== user.uid) return;
       
       console.log(`Received answer from ${data.sender}:`, data);
+      
+      // Validate answer
+      if (!data.answer || !data.answer.type) {
+        console.error("Invalid answer received:", data.answer);
+        return;
+      }
       
       const pc = peerConnectionsRef.current[data.sender];
       if (!pc) {
@@ -258,10 +270,16 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     const handleCandidate = (snapshot) => {
       const data = snapshot.val();
       
-      // Check if this candidate is for us
-      if (data.target !== user.uid) return;
+      // Check if this candidate is for us and validate
+      if (!data || data.target !== user.uid) return;
       
       console.log(`Received ICE candidate from ${data.sender}`);
+      
+      // Validate candidate
+      if (!data.candidate) {
+        console.error("Invalid ICE candidate received");
+        return;
+      }
       
       const pc = peerConnectionsRef.current[data.sender];
       if (!pc) {
@@ -333,12 +351,25 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         console.log(`Connection to ${participantId} was lost, cleaning up`);
         pc.close();
         delete peerConnectionsRef.current[participantId];
+        
+        // Update UI
+        setRemoteStreams(prev => {
+          const newStreams = {...prev};
+          delete newStreams[participantId];
+          return newStreams;
+        });
       }
     };
     
     // Handle ICE connection state changes
     pc.oniceconnectionstatechange = () => {
       console.log(`ICE connection state with ${participantId} changed to: ${pc.iceConnectionState}`);
+      
+      if (pc.iceConnectionState === 'failed') {
+        console.log(`ICE connection to ${participantId} failed, attempting restart`);
+        // Attempt to restart ICE
+        pc.restartIce();
+      }
     };
     
     // Handle remote streams
@@ -361,13 +392,18 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           return pc.setLocalDescription(offer);
         })
         .then(() => {
-          console.log(`Sending offer to ${participantId}`);
-          const offerRef = push(ref(rtdb, `calls/${roomId}/offers`));
-          set(offerRef, {
-            sender: user.uid,
-            target: participantId,
-            offer: pc.localDescription
-          });
+          // Make sure local description is set before sending
+          if (pc.localDescription) {
+            console.log(`Sending offer to ${participantId}`);
+            const offerRef = push(ref(rtdb, `calls/${roomId}/offers`));
+            set(offerRef, {
+              sender: user.uid,
+              target: participantId,
+              offer: pc.localDescription
+            });
+          } else {
+            console.error("Local description not set, cannot send offer");
+          }
         })
         .catch(error => {
           console.error("Error creating offer:", error);
