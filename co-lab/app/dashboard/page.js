@@ -137,7 +137,7 @@ export default function Dashboard() {
                   onClick={() => setActiveTab('chat')}
                   className={`py-4 px-4 font-medium text-sm ${activeTab === 'chat' ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-gray-600 hover:text-[#0066cc]'}`}
                 >
-                  Group Chat
+                  Groups Chat
                 </button>
                 <button
                   onClick={() => setActiveTab('whiteboard')}
