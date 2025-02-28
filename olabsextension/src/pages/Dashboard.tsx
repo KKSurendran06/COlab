@@ -39,8 +39,8 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs.length > 0 && tabs[0].url) {
         const url = tabs[0].url;
-        console.log("OLabs URL:", url); // ✅ Correctly gets the URL
-  
+        console.log("OLabs URL:", url);
+
         try {
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC5JJ8UDOsoyVTIGZDFwvUdF0zV6liVHfs`,
@@ -52,14 +52,13 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
               }),
             }
           );
-  
+
           const data = await response.json();
           console.log("AI Response:", data);
-  
+
           const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response.";
           setAiResponse(explanation);
-  
-          // Read out the response
+
           const speech = new SpeechSynthesisUtterance(explanation);
           speech.lang = "en-US";
           window.speechSynthesis.speak(speech);
@@ -72,56 +71,70 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
       }
     });
   };
-  
-  
 
   if (!experiment) {
-    return <div className="p-6 text-center">Loading experiment details...</div>;
+    return <div className="p-4 text-center">Loading experiment details...</div>;
   }
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
-      <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg text-center">
-        <h2 className="text-2xl font-bold text-gray-700">Dashboard</h2>
+    <div className="p-4 bg-gray-100 min-h-screen flex flex-col items-center">
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-semibold mb-4 text-center">Dashboard</h2>
 
-        <button className="w-full p-3 bg-red-500 text-white rounded-lg shadow-md flex items-center justify-center gap-2 mb-4" onClick={logout}>
+        <button
+          className="w-full py-2 px-4 bg-red-500 text-white rounded-md mb-4 flex items-center justify-center gap-2"
+          onClick={logout}
+        >
           <FaSignOutAlt /> Logout
         </button>
 
-        <div className="p-4 border rounded-lg bg-gray-50 shadow-sm mb-4">
-          <h3 className="text-lg font-semibold">Current Experiment</h3>
-          <p>🔬 Subject: {subjectName}</p>
-          <p>🧪 Experiment: {experimentName}</p>
-          <p>📜 Step: {experiment.cnt}</p>
+        <div className="mb-4 p-4 border rounded-md bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Current Experiment</h3>
+          <p className="text-sm">
+            <span className="font-medium">Subject:</span> {subjectName}
+          </p>
+          <p className="text-sm">
+            <span className="font-medium">Experiment:</span> {experimentName}
+          </p>
+          <p className="text-sm">
+            <span className="font-medium">Step:</span> {experiment.cnt}
+          </p>
         </div>
 
-        <div className="p-4 border rounded-lg bg-gray-50 shadow-sm mb-4">
-          <h3 className="text-lg font-semibold">Users Online</h3>
+        <div className="mb-4 p-4 border rounded-md bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Users Online</h3>
           {liveUsers.length > 0 ? (
-            <ul>
+            <ul className="list-disc list-inside">
               {liveUsers.map((user) => (
-                <li key={user.id} className="text-gray-700">{user.name}</li>
+                <li key={user.id} className="text-sm">
+                  {user.name}
+                </li>
               ))}
             </ul>
           ) : (
-            <p>No users online</p>
+            <p className="text-sm">No users online</p>
           )}
         </div>
 
-        <button className="w-full p-3 bg-blue-500 text-white rounded-lg shadow-md flex items-center justify-center gap-2 mb-2"
-          onClick={() => window.open("https://www.olabs.edu.in", "_blank")}>
-          <FaGlobe /> Go to Main Website
-        </button>
-
-        <button className="w-full p-3 bg-purple-500 text-white rounded-lg shadow-md flex items-center justify-center gap-2"
-          onClick={handleAIExplanation}>
-          <FaRobot /> AI Explanation
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            className="w-full py-2 px-4 bg-blue-500 text-white rounded-md flex items-center justify-center gap-2"
+            onClick={() => window.open("https://www.olabs.edu.in", "_blank")}
+          >
+            <FaGlobe /> Main Website
+          </button>
+          <button
+            className="w-full py-2 px-4 bg-purple-500 text-white rounded-md flex items-center justify-center gap-2"
+            onClick={handleAIExplanation}
+          >
+            <FaRobot /> AI Explanation
+          </button>
+        </div>
 
         {aiResponse && (
-          <div className="p-4 border rounded-lg bg-gray-50 shadow-sm mt-4">
-            <h3 className="text-lg font-semibold">AI Summary</h3>
-            <p>{aiResponse}</p>
+          <div className="mt-4 p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold mb-2">AI Summary</h3>
+            <p className="text-sm">{aiResponse}</p>
           </div>
         )}
       </div>

@@ -1,1 +1,0 @@
-import{g as a,m as t,e as s,f as i,n as m}from"./assets/firebase-Crj1z-mf.js";chrome.tabs.onUpdated.addListener(async()=>{const e=await a("experimentDetails");e&&(await t(s(i,"experiments"),{sub:e.sub,sim:e.sim,cnt:e.cnt,timestamp:m()}),console.log("User added to experiment tracking:",e))});

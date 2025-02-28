@@ -20,7 +20,7 @@ export default function Login() {
   };
 
   if (showSignup) {
-    return <Signup />;
+    return <Signup onBackToLogin={() => setShowSignup(false)}/>;
   }
 
   return (
@@ -34,7 +34,7 @@ export default function Login() {
         <h2 className="text-3xl font-bold text-center text-gray-700">Login</h2>
         {error && <p className="text-red-500 text-center">{error}</p>}
         <div className="relative">
-          <FaUser className="absolute left-4 top-3 text-gray-500 text-lg" />
+          <FaUser className="absolute left-4 top-8 text-gray-500 text-lg" />
           <input
             type="email"
             placeholder="Email"
@@ -44,7 +44,7 @@ export default function Login() {
           />
         </div>
         <div className="relative">
-          <FaLock className="absolute left-4 top-3 text-gray-500 text-lg" />
+          <FaLock className="absolute left-4 top-4 text-gray-500 text-lg" />
           <input
             type="password"
             placeholder="Password"
@@ -69,8 +69,8 @@ export default function Login() {
           onClick={() => setShowSignup(true)}
         >
           Signup
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-}
+        </motion.button>  
+            </div>
+          </motion.div>
+        );
+      }
