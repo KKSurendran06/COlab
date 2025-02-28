@@ -39,12 +39,16 @@ export default function VideoCall({ roomId, onLeaveCall }) {
   const peerConnectionsRef = useRef({});
   const [remoteStreams, setRemoteStreams] = useState({});
   const screenTrackRef = useRef(null);
+  const [connectionStatus, setConnectionStatus] = useState("Initializing");
 
   // STUN servers for WebRTC connection
   const configuration = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" },
+      { urls: "stun:stun3.l.google.com:19302" },
+      { urls: "stun:stun4.l.google.com:19302" },
     ],
   };
 
@@ -52,9 +56,22 @@ export default function VideoCall({ roomId, onLeaveCall }) {
   const roomRef = ref(rtdb, `calls/${roomId}`);
   const participantsRef = ref(rtdb, `calls/${roomId}/participants`);
 
+  // Debug function to check connections periodically
+  const debugConnections = () => {
+    Object.entries(peerConnectionsRef.current).forEach(([id, pc]) => {
+      console.log(`Connection to ${id}:`, {
+        iceConnectionState: pc.iceConnectionState,
+        iceGatheringState: pc.iceGatheringState,
+        signalingState: pc.signalingState,
+        connectionState: pc.connectionState
+      });
+    });
+  };
+
   // Initialize the call
   useEffect(() => {
     console.log("Initializing video call for room:", roomId);
+    setConnectionStatus("Initializing");
     
     // Get local media stream
     const setupLocalMedia = async () => {
@@ -69,6 +86,7 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           stream.getTracks().map(t => `${t.kind}: ${t.id} (${t.label})`).join(", "));
         
         setLocalStream(stream);
+        setConnectionStatus("Media acquired");
         
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
@@ -81,18 +99,25 @@ export default function VideoCall({ roomId, onLeaveCall }) {
             displayName: user.displayName || user.email || user.uid,
             joined: new Date().toISOString()
           });
+          setConnectionStatus("Registered as participant");
         }
       } catch (error) {
         console.error("Error accessing media devices:", error);
+        setConnectionStatus("Media error: " + error.message);
         alert("Could not access camera or microphone. Please check permissions.");
       }
     };
     
     setupLocalMedia();
     
+    // Setup debug interval
+    const debugInterval = setInterval(debugConnections, 5000);
+    
     // Cleanup function
     return () => {
       console.log("Cleaning up video call...");
+      clearInterval(debugInterval);
+      
       if (localStream) {
         localStream.getTracks().forEach(track => {
           console.log(`Stopping track: ${track.kind}`);
@@ -112,6 +137,7 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     if (!user || !localStream) return;
     
     console.log("Setting up participant listeners...");
+    setConnectionStatus("Setting up participant listeners");
     
     // Listen for new participants
     const handleNewParticipant = (snapshot) => {
@@ -130,6 +156,7 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       
       // Create WebRTC connection to this participant
       createPeerConnection(participantId, true);
+      setConnectionStatus("New participant joined");
     };
     
     // Listen for participants leaving
@@ -158,6 +185,8 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         delete newParticipants[participantId];
         return newParticipants;
       });
+      
+      setConnectionStatus("Participant left");
     };
     
     // Get existing participants
@@ -177,7 +206,14 @@ export default function VideoCall({ roomId, onLeaveCall }) {
             createPeerConnection(id, true);
           }
         });
+        
+        setConnectionStatus("Connected to existing participants");
+      } else {
+        setConnectionStatus("No other participants yet");
       }
+    }).catch(err => {
+      console.error("Error getting participants:", err);
+      setConnectionStatus("Error getting participants");
     });
     
     // Set up listeners
@@ -195,26 +231,30 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     if (!user || !localStream) return;
     
     console.log("Setting up WebRTC signaling listeners...");
+    setConnectionStatus("Setting up WebRTC signaling");
     
     // Listen for offers
     const handleOffer = (snapshot) => {
       const data = snapshot.val();
       
-      console.log("Received potential offer data:", data); // Enhanced logging
+      console.log("Received potential offer data:", data);
       
       // Check if this offer is for us
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received offer from ${data.sender}:`, data);
+      setConnectionStatus(`Received offer from ${data.sender}`);
       
       // Enhanced validation
       if (!data.offer) {
         console.error("Offer is missing in the data:", data);
+        setConnectionStatus("Invalid offer received");
         return;
       }
       
       if (!data.offer.type) {
         console.error("Offer type is missing:", data.offer);
+        setConnectionStatus("Invalid offer format");
         return;
       }
       
@@ -225,6 +265,7 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       pc.setRemoteDescription(new RTCSessionDescription(data.offer))
         .then(() => {
           console.log(`Creating answer for ${data.sender}`);
+          setConnectionStatus(`Creating answer for ${data.sender}`);
           return pc.createAnswer();
         })
         .then(answer => {
@@ -233,16 +274,22 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         })
         .then(() => {
           console.log(`Sending answer to ${data.sender}`);
+          setConnectionStatus(`Sending answer to ${data.sender}`);
+          
+          // Make sure the answer is properly serialized
+          const answerData = JSON.parse(JSON.stringify(pc.localDescription));
+          
           // Send answer
           const answerRef = push(ref(rtdb, `calls/${roomId}/answers`));
           set(answerRef, {
             sender: user.uid,
             target: data.sender,
-            answer: pc.localDescription
+            answer: answerData
           });
         })
         .catch(error => {
           console.error("Error handling offer:", error);
+          setConnectionStatus(`Error handling offer: ${error.message}`);
         });
     };
     
@@ -250,52 +297,55 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     const handleAnswer = (snapshot) => {
       const data = snapshot.val();
       
-      console.log("Received potential answer data:", data); // Enhanced logging
+      console.log("Received potential answer data:", data);
       
       // Check if this answer is for us and validate
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received answer from ${data.sender}:`, data);
+      setConnectionStatus(`Received answer from ${data.sender}`);
       
       // Enhanced validation
       if (!data.answer) {
         console.error("Answer is missing in the data:", data);
+        setConnectionStatus("Invalid answer received");
         return;
       }
       
       if (!data.answer.type) {
         console.error("Answer type is missing:", data.answer);
+        setConnectionStatus("Invalid answer format");
         return;
       }
       
       const pc = peerConnectionsRef.current[data.sender];
       if (!pc) {
         console.error(`No peer connection found for ${data.sender}`);
+        setConnectionStatus(`No peer connection for ${data.sender}`);
         return;
       }
       
       pc.setRemoteDescription(new RTCSessionDescription(data.answer))
+        .then(() => {
+          console.log(`Successfully set remote description for ${data.sender}`);
+          setConnectionStatus(`Connection established with ${data.sender}`);
+        })
         .catch(error => {
           console.error("Error setting remote description:", error);
+          setConnectionStatus(`Error with remote description: ${error.message}`);
         });
     };
     
-    // Listen for ICE candidates
+    // Listen for ICE candidates - IMPROVED HANDLING
     const handleCandidate = (snapshot) => {
       const data = snapshot.val();
       
-      console.log("Received potential ICE candidate:", data); // Enhanced logging
+      console.log("Received potential ICE candidate:", data);
       
-      // Check if this candidate is for us and validate
+      // Check if this candidate is for us
       if (!data || data.target !== user.uid) return;
       
-      console.log(`Received ICE candidate from ${data.sender}`);
-      
-      // Enhanced validation
-      if (!data.candidate) {
-        console.error("ICE candidate is missing in the data:", data);
-        return;
-      }
+      console.log(`Received ICE candidate from ${data.sender}:`, data);
       
       const pc = peerConnectionsRef.current[data.sender];
       if (!pc) {
@@ -303,10 +353,52 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         return;
       }
       
-      pc.addIceCandidate(new RTCIceCandidate(data.candidate))
-        .catch(error => {
-          console.error("Error adding ICE candidate:", error);
-        });
+      // Skip if connection is closed
+      if (pc.signalingState === "closed") {
+        console.warn("Cannot add ICE candidate, connection is closed");
+        return;
+      }
+      
+      try {
+        // Check different possible structures for the candidate
+        if (data.candidate && typeof data.candidate === 'object') {
+          // Standard structure
+          pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+            .then(() => {
+              console.log(`Added ICE candidate from ${data.sender}`);
+            })
+            .catch(error => {
+              console.error("Error adding ICE candidate:", error);
+            });
+        } else if (data.candidate && typeof data.candidate === 'string') {
+          // Sometimes candidates are serialized as strings
+          const candidateObj = JSON.parse(data.candidate);
+          pc.addIceCandidate(new RTCIceCandidate(candidateObj))
+            .then(() => {
+              console.log(`Added parsed ICE candidate from ${data.sender}`);
+            })
+            .catch(error => {
+              console.error("Error adding parsed ICE candidate:", error);
+            });
+        } else if (data.sdpMid || data.sdpMLineIndex || data.candidate) {
+          // Some systems put the candidate properties at the root level
+          pc.addIceCandidate(new RTCIceCandidate({
+            sdpMid: data.sdpMid,
+            sdpMLineIndex: data.sdpMLineIndex,
+            candidate: data.candidate
+          }))
+            .then(() => {
+              console.log(`Added root-level ICE candidate from ${data.sender}`);
+            })
+            .catch(error => {
+              console.error("Error adding root-level ICE candidate:", error);
+            });
+        } else {
+          console.warn("ICE candidate data is in an unrecognized format:", data);
+        }
+      } catch (err) {
+        console.error("Exception handling ICE candidate:", err);
+      }
     };
     
     // Set up listeners
@@ -344,27 +436,38 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       pc.addTrack(track, localStream);
     });
     
-    // Handle ICE candidates
+    // Handle ICE candidates - IMPROVED
     pc.onicecandidate = (event) => {
       if (!event.candidate) return;
       
-      console.log(`Generated ICE candidate for ${participantId}`);
+      console.log(`Generated ICE candidate for ${participantId}:`, event.candidate);
+      
+      // Ensure the candidate is serializable
+      const candidateJson = JSON.parse(JSON.stringify(event.candidate));
       
       // Send candidate to peer
       const candidateRef = push(ref(rtdb, `calls/${roomId}/candidates`));
       set(candidateRef, {
         sender: user.uid,
         target: participantId,
-        candidate: event.candidate
+        candidate: candidateJson
+      }).catch(err => {
+        console.error("Error sending ICE candidate:", err);
       });
     };
     
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
       console.log(`Connection state with ${participantId} changed to: ${pc.connectionState}`);
+      setConnectionStatus(`Connection state: ${pc.connectionState}`);
       
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      if (pc.connectionState === 'connected') {
+        console.log(`Successfully connected to ${participantId}`);
+        setConnectionStatus(`Connected to ${participantId}`);
+      } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
         console.log(`Connection to ${participantId} was lost, cleaning up`);
+        setConnectionStatus(`Lost connection to ${participantId}`);
+        
         pc.close();
         delete peerConnectionsRef.current[participantId];
         
@@ -381,16 +484,26 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     pc.oniceconnectionstatechange = () => {
       console.log(`ICE connection state with ${participantId} changed to: ${pc.iceConnectionState}`);
       
-      if (pc.iceConnectionState === 'failed') {
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        console.log(`ICE connection established with ${participantId}`);
+        setConnectionStatus(`ICE connected to ${participantId}`);
+      } else if (pc.iceConnectionState === 'failed') {
         console.log(`ICE connection to ${participantId} failed, attempting restart`);
+        setConnectionStatus(`ICE failed with ${participantId}, restarting`);
         // Attempt to restart ICE
         pc.restartIce();
       }
     };
     
+    // Add ICE connection state logging
+    pc.onicegatheringstatechange = () => {
+      console.log(`ICE gathering state for ${participantId} changed to: ${pc.iceGatheringState}`);
+    };
+    
     // Handle remote streams
     pc.ontrack = (event) => {
       console.log(`Received track from ${participantId}:`, event.track.kind);
+      setConnectionStatus(`Received ${event.track.kind} from ${participantId}`);
       
       // Store the remote stream
       setRemoteStreams(prev => ({
@@ -402,19 +515,25 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     // Create and send an offer if we're the initiator
     if (isInitiator) {
       console.log(`Creating offer for ${participantId}`);
+      setConnectionStatus(`Creating offer for ${participantId}`);
       
       // Fix: Wait for all ICE candidates before sending offer
       let iceCandidatesComplete = false;
       
       // Track when ICE gathering is complete
+      const originalIceGatheringHandler = pc.onicegatheringstatechange;
       pc.onicegatheringstatechange = () => {
+        originalIceGatheringHandler();
         console.log(`ICE gathering state for ${participantId}: ${pc.iceGatheringState}`);
         if (pc.iceGatheringState === 'complete') {
           iceCandidatesComplete = true;
         }
       };
       
-      pc.createOffer()
+      pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      })
         .then(offer => {
           console.log(`Setting local description for ${participantId}`);
           return pc.setLocalDescription(offer);
@@ -450,6 +569,8 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           // Make sure local description is set and valid before sending
           if (pc.localDescription && pc.localDescription.type && pc.localDescription.sdp) {
             console.log(`Sending offer to ${participantId}`);
+            setConnectionStatus(`Sending offer to ${participantId}`);
+            
             const offerRef = push(ref(rtdb, `calls/${roomId}/offers`));
             
             // Create a deep copy of the offer to ensure it's fully serialized
@@ -459,13 +580,18 @@ export default function VideoCall({ roomId, onLeaveCall }) {
               sender: user.uid,
               target: participantId,
               offer: offerData
+            }).catch(err => {
+              console.error("Error sending offer:", err);
+              setConnectionStatus(`Error sending offer: ${err.message}`);
             });
           } else {
             console.error("Local description not set or invalid, cannot send offer:", pc.localDescription);
+            setConnectionStatus("Local description invalid");
           }
         })
         .catch(error => {
           console.error("Error creating offer:", error);
+          setConnectionStatus(`Error creating offer: ${error.message}`);
         });
     }
     
@@ -605,12 +731,34 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     onLeaveCall();
   };
 
+  // Manual connection retry
+  const retryConnections = () => {
+    console.log("Manually retrying connections");
+    setConnectionStatus("Manually retrying connections");
+    
+    // Close existing connections
+    Object.entries(peerConnectionsRef.current).forEach(([id, pc]) => {
+      pc.close();
+    });
+    
+    // Reset connections
+    peerConnectionsRef.current = {};
+    
+    // Reset remote streams
+    setRemoteStreams({});
+    
+    // Reestablish connections with all participants
+    Object.keys(participants).forEach(id => {
+      createPeerConnection(id, true);
+    });
+  };
+
   return (
     <div className="p-6 bg-gray-900 min-h-screen flex flex-col items-center text-white">
       <h2 className="text-2xl font-bold bg-gray-800 px-4 py-2 rounded-lg shadow-md">Room ID: {roomId}</h2>
       
       <div className="mt-4 text-sm bg-gray-800 p-2 rounded-lg">
-        <p>Status: {localStream ? "Connected" : "Connecting..."}</p>
+        <p>Status: {connectionStatus}</p>
         <p>Participants: {Object.keys(participants).length + (user ? 1 : 0)}</p>
         <p>Remote streams: {Object.keys(remoteStreams).length}</p>
       </div>
@@ -666,6 +814,12 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           className={`px-4 py-2 rounded-lg ${isScreenSharing ? 'bg-green-700 hover:bg-green-800' : 'bg-green-500 hover:bg-green-600'}`}
         >
           {isScreenSharing ? "Stop Sharing" : "Share Screen"}
+        </button>
+        <button 
+          onClick={retryConnections} 
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
+        >
+          Retry Connections
         </button>
         <button 
           onClick={leaveCall} 
