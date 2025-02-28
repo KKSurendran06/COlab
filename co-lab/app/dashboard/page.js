@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useRouter } from "next/navigation";
-import GroupList from "../components/GroupList";
-import GroupChat from "../components/GroupChat";
-import CreateGroupModal from "../components/CreateGroupModal";
-import OnlineUsers from "../components/OnlineUsers";
-import UserGroups from "../components/UserGroups";
-import Whiteboard from "../components/Whiteboard";
-import VideoCall from "../components/VideoCall";
-import Notes from "../components/Notes";
-import { setupPresence } from "../utils/presence";
-import Image from "next/image";
+import { useState, useEffect,useRef} from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
+import GroupList from '../components/GroupList';
+import GroupChat from '../components/GroupChat';
+import CreateGroupModal from '../components/CreateGroupModal';
+import OnlineUsers from '../components/OnlineUsers';
+import UserGroups from '../components/UserGroups';
+import Whiteboard from '../components/Whiteboard';
+import VideoCall from '../components/VideoCall';
+import Notes from '../components/Notes';
+import { setupPresence } from '../utils/presence';
+import LiveQuiz from '../components/QuizComponent';
 
 export default function Dashboard() {
   const { user, logout, userPoints } = useAuth();
@@ -336,7 +336,7 @@ export default function Dashboard() {
                       : "text-gray-600 hover:text-[#0066cc]"
                   }`}
                 >
-                  Groups Chat
+                  Group Chat
                 </button>
                 <button
                   onClick={() => setActiveTab("whiteboard")}
@@ -368,18 +368,21 @@ export default function Dashboard() {
                 >
                   Notes
                 </button>
+                <button
+                  onClick={() => setActiveTab('quiz')}
+                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'quiz' ? 'text-[#ff9800] border-b-2 border-[#ff9800]' : 'text-gray-600 hover:text-[#ff9800]'}`}
+                >
+                  Live Quiz
+                </button>
               </div>
 
               {/* Content area */}
               <div className="flex-1 overflow-hidden bg-white">
-                {activeTab === "chat" && <GroupChat group={selectedGroup} />}
-                {activeTab === "whiteboard" && (
-                  <Whiteboard groupId={selectedGroup.id} />
-                )}
-                {activeTab === "video" && (
-                  <VideoCall groupId={selectedGroup.id} />
-                )}
-                {activeTab === "notes" && <Notes groupId={selectedGroup.id} />}
+                {activeTab === 'chat' && <GroupChat group={selectedGroup} />}
+                {activeTab === 'whiteboard' && <Whiteboard groupId={selectedGroup.id} />}
+                {activeTab === 'video' && <VideoCall groupId={selectedGroup.id} />}
+                {activeTab === 'notes' && <Notes groupId={selectedGroup.id} />}
+                {activeTab === 'quiz' && <LiveQuiz groupId={selectedGroup.id} />}
               </div>
             </>
           ) : (
@@ -414,7 +417,8 @@ export default function Dashboard() {
                 {/* Search & Available Groups */}
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="p-6">
-                    <GroupList
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Available Groups</h2>
+                    <GroupList 
                       onSelectGroup={handleGroupSelect}
                       searchQuery={searchQuery}
                       isDarkMode={false}
