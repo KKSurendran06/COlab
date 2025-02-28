@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { db, rtdb } from '../firebase';
 import { ref, onValue, set, push, remove, update, onDisconnect, get } from 'firebase/database';
-import { collection, onSnapshot, addDoc, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, query, orderBy, deleteDoc, getDocs } from 'firebase/firestore';
 
 export default function LiveQuiz({ groupId, topic, userId }) {
   const [quizData, setQuizData] = useState([]);
@@ -49,6 +49,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       setTimeLeft(data.timeLeft || null);
       setShowResults(data.showResults || false);
       setCountdownToStart(data.countdownToStart || null);
+      console.log("Quiz status updated:", data.status);
     });
     
     // Fixed participants handler to properly get all users
@@ -199,16 +200,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     setLoading(true);
     
     try {
-      // First clear old questions
-      const quizCollection = collection(db, 'quizzes', groupId, 'questions');
-      const unsubscribe = onSnapshot(quizCollection, (snapshot) => {
-        snapshot.docs.forEach(doc => {
-          deleteDoc(doc.ref);
-        });
-        unsubscribe();
-      });
-      
-      // Reset quiz status
+      // Reset quiz status first
       await set(ref(rtdb, `groups/${groupId}/quiz`), {
         status: 'generating',
         currentQuestion: 0,
@@ -223,6 +215,22 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       await remove(ref(rtdb, `groups/${groupId}/scores`));
       await remove(ref(rtdb, `groups/${groupId}/readyUsers`));
       
+      // First clear old questions properly
+      const quizCollection = collection(db, 'quizzes', groupId, 'questions');
+      const querySnapshot = await getDocs(query(quizCollection));
+      
+      // Delete all existing questions
+      const deletePromises = [];
+      querySnapshot.forEach((doc) => {
+        deletePromises.push(deleteDoc(doc.ref));
+      });
+      
+      if (deletePromises.length > 0) {
+        await Promise.all(deletePromises);
+        console.log(`Deleted ${deletePromises.length} existing questions`);
+      }
+      
+      // Generate quiz with Gemini API
       const prompt = `Generate a quiz with 5 multiple-choice questions about ${topic}. 
         Format as a JSON array with objects containing:
         1. question (string)
@@ -231,6 +239,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         4. explanation (string explaining why the answer is correct)
         
         Only return the JSON without any additional text or formatting.`;
+        
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC5JJ8UDOsoyVTIGZDFwvUdF0zV6liVHfs`,
         {
@@ -242,22 +251,90 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         }
       );
       
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
       const data = await response.json();
-      // Parse the JSON response from Gemini AI
-      const questions = JSON.parse(data.contents[0].parts[0].text);
+      console.log("Gemini API response:", data);
+      
+      // Handle the Gemini response structure correctly
+      let questions;
+      try {
+        // The response might be directly in the text or it might need parsing
+        const responseText = data.contents?.[0]?.parts?.[0]?.text || '';
+        
+        // Try to extract JSON if there's any other text around it
+        const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+        const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+        
+        questions = JSON.parse(jsonString);
+        
+        if (!Array.isArray(questions) || questions.length === 0) {
+          throw new Error('Invalid question format');
+        }
+        
+        console.log("Parsed questions:", questions);
+      } catch (parseError) {
+        console.error("Error parsing questions:", parseError);
+        console.log("Raw response:", data);
+        
+        // Fallback questions in case API fails
+        questions = [
+          {
+            question: "What is the capital of France?",
+            options: ["Paris", "London", "Berlin", "Rome"],
+            correctAnswer: 0,
+            explanation: "Paris is the capital city of France."
+          },
+          {
+            question: "Which planet is known as the Red Planet?",
+            options: ["Earth", "Mars", "Venus", "Jupiter"],
+            correctAnswer: 1,
+            explanation: "Mars appears reddish due to iron oxide (rust) on its surface."
+          },
+          {
+            question: "What is 2+2?",
+            options: ["3", "4", "5", "22"],
+            correctAnswer: 1,
+            explanation: "2+2 equals 4 in basic arithmetic."
+          },
+          {
+            question: "Who wrote Romeo and Juliet?",
+            options: ["Charles Dickens", "Jane Austen", "William Shakespeare", "Mark Twain"],
+            correctAnswer: 2,
+            explanation: "William Shakespeare wrote the tragedy Romeo and Juliet."
+          },
+          {
+            question: "What is the chemical symbol for water?",
+            options: ["Wa", "H2O", "CO2", "O2"],
+            correctAnswer: 1,
+            explanation: "H2O represents two hydrogen atoms and one oxygen atom."
+          }
+        ];
+        console.log("Using fallback questions");
+      }
       
       // Add each question to Firestore with an order field
+      const addPromises = [];
       for (let i = 0; i < questions.length; i++) {
-        await addDoc(quizCollection, { 
-          ...questions[i], 
-          order: i 
-        });
+        addPromises.push(
+          addDoc(quizCollection, { 
+            ...questions[i], 
+            order: i 
+          })
+        );
       }
+      
+      await Promise.all(addPromises);
+      console.log("Questions added to Firestore");
       
       // Update quiz status to ready
       await update(ref(rtdb, `groups/${groupId}/quiz`), {
         status: 'ready',
       });
+      
+      console.log("Quiz generated successfully with", questions.length, "questions");
       
     } catch (error) {
       console.error("Error generating quiz:", error);
@@ -358,15 +435,19 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       <div className="bg-white p-4 rounded-lg shadow">
         <h3 className="text-xl font-bold mb-4">Points</h3>
         <div className="space-y-2">
-          {sortedScores.map((entry, index) => (
-            <div key={entry.userId} className="flex justify-between items-center">
-              <div className="flex items-center">
-                <span className="mr-2 font-bold">{index + 1}.</span>
-                <span>{entry.name}</span>
+          {sortedScores.length > 0 ? (
+            sortedScores.map((entry, index) => (
+              <div key={entry.userId} className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <span className="mr-2 font-bold">{index + 1}.</span>
+                  <span>{entry.name}</span>
+                </div>
+                <span className="font-semibold">{entry.score} points</span>
               </div>
-              <span className="font-semibold">{entry.score} points</span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="text-center text-gray-500">No scores yet</div>
+          )}
         </div>
       </div>
     );
@@ -422,26 +503,80 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     );
   }
   
-  // Add a force start button for single user
-  function renderForceStartButton() {
-    return (
-      <div className="mt-4 text-center">
-        <button
-          onClick={startQuiz}
-          className="px-4 py-2 bg-purple-500 text-white rounded-md"
-        >
-          Start Quiz Now
-        </button>
-        <p className="text-sm text-gray-500 mt-2">
-          Use this button to start the quiz immediately without waiting for other participants.
-        </p>
-      </div>
-    );
+  // Add function to render quiz controls
+  function renderQuizControls() {
+    // If quiz is inactive, show generate button
+    if (quizStatus === 'inactive') {
+      return (
+        <div className="text-center py-8 bg-gray-50 rounded-lg">
+          <p className="mb-4">No active quiz. Click below to generate a new quiz.</p>
+          <button 
+            onClick={generateNewQuiz}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+          >
+            Generate New Quiz
+          </button>
+        </div>
+      );
+    }
+    
+    // If quiz is in error state, show retry button
+    if (quizStatus === 'error') {
+      return (
+        <div className="text-center py-8 bg-red-50 rounded-lg">
+          <p className="mb-4">There was an error generating the quiz. Please try again.</p>
+          <button 
+            onClick={generateNewQuiz}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    
+    // If quiz is generating, show loading
+    if (quizStatus === 'generating') {
+      return (
+        <div className="text-center py-8 bg-gray-50 rounded-lg">
+          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Generating quiz questions...</p>
+        </div>
+      );
+    }
+    
+    // If quiz is ready, show ready UI and force start
+    if (quizStatus === 'ready') {
+      return (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-bold mb-4">Quiz is Ready!</h3>
+          {renderReadyStatus()}
+          <div className="mt-4 text-center">
+            <button
+              onClick={startQuiz}
+              className="px-4 py-2 bg-purple-500 text-white rounded-md"
+            >
+              Start Quiz Now
+            </button>
+            <p className="text-sm text-gray-500 mt-2">
+              Use this button to start the quiz immediately.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   }
-  
+
   return (
     <div className="max-w-4xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Live Quiz: {topic}</h2>
+      
+      {/* Debug info - always visible */}
+      <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
+        <p>Status: {quizStatus} | Questions: {quizData.length} | Current: {currentQuestion}</p>
+      </div>
       
       {/* Participants list */}
       <div className="mb-4">
@@ -455,178 +590,166 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         </div>
       </div>
       
-      {/* Ready status (only show when quiz is ready) */}
-      {quizStatus === 'ready' && renderReadyStatus()}
-      
-      {/* Force start button for single player */}
-      {quizStatus === 'ready' && participants.length <= 1 && renderForceStartButton()}
-      
-      {/* User Score (only show during active quiz) */}
-      {quizStatus === 'active' && renderUserScore()}
-      
-      {/* Quiz status */}
+      {/* Handle loading state */}
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p>Loading quiz...</p>
         </div>
-      ) : quizStatus === 'inactive' ? (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <p className="mb-4">No active quiz. Click below to generate a new quiz.</p>
-          <button 
-            onClick={generateNewQuiz}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
-          >
-            Generate New Quiz
-          </button>
-        </div>
-      ) : quizStatus === 'generating' ? (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Generating quiz questions...</p>
-        </div>
-      ) : quizStatus === 'ready' && countdownToStart === null ? (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <p className="mb-4">Quiz is ready! Waiting for participants to be ready.</p>
-          <p className="text-sm text-gray-500">
-            {participants.length <= 1 
-              ? "You can start the quiz yourself with the 'Start Quiz Now' button."
-              : "Quiz will start automatically when at least one user is ready."}
-          </p>
-        </div>
-      ) : quizStatus === 'active' && quizData.length > 0 ? (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          {/* Timer */}
-          {timeLeft !== null && (
-            <div className="mb-4 text-center">
-              <div className={`inline-block px-4 py-2 rounded-full ${timeLeft <= 10 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                Time left: {timeLeft}s
-              </div>
-            </div>
-          )}
+      ) : (
+        <>
+          {/* Quiz controls - Generate/Start buttons */}
+          {!['active', 'completed'].includes(quizStatus) && renderQuizControls()}
           
-          {/* Question counter */}
-          <div className="mb-4 text-sm text-gray-500">
-            Question {currentQuestion + 1} of {quizData.length}
-          </div>
+          {/* User Score (only show during active quiz) */}
+          {quizStatus === 'active' && renderUserScore()}
           
-          {/* Question */}
-          <h3 className="text-xl font-semibold mb-4">{quizData[currentQuestion]?.question}</h3>
-          
-          {/* Options */}
-          <div className="space-y-3">
-            {quizData[currentQuestion]?.options.map((option, index) => {
-              // Get all user answers for this question
-              const questionAnswers = userAnswers[currentQuestion] || {};
-              const answerCount = Object.values(questionAnswers).filter(ans => ans.answer === index).length;
-              
-              // Check if this is the correct answer (only show after answering)
-              const isCorrect = quizData[currentQuestion]?.correctAnswer === index;
-              
-              // Check if this user selected this option
-              const isSelected = selectedOption === index;
-              
-              // Determine styling based on selection and correctness
-              let bgColor = "bg-gray-100 hover:bg-gray-200";
-              if (isSelected) {
-                bgColor = "bg-blue-200";
-              }
-              
-              return (
-                <button 
-                  key={index}
-                  onClick={() => handleAnswer(index)}
-                  disabled={selectedOption !== null}
-                  className={`block w-full p-3 text-left rounded-md ${bgColor} relative transition`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span>{option}</span>
-                    {answerCount > 0 && (
-                      <span className="px-2 py-1 text-xs bg-gray-200 rounded-full">
-                        {answerCount} {answerCount === 1 ? 'answer' : 'answers'}
-                      </span>
-                    )}
+          {/* Active quiz content */}
+          {quizStatus === 'active' && quizData.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              {/* Timer */}
+              {timeLeft !== null && (
+                <div className="mb-4 text-center">
+                  <div className={`inline-block px-4 py-2 rounded-full ${timeLeft <= 10 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                    Time left: {timeLeft}s
                   </div>
-                </button>
-              );
-            })}
-          </div>
-          
-          {/* Show explanation after selecting an answer */}
-          {selectedOption !== null && (
-            <div className="mt-4 p-3 bg-blue-50 rounded">
-              <div className="font-semibold mb-1">
-                {selectedOption === quizData[currentQuestion]?.correctAnswer 
-                  ? '✓ Correct! (+1 point)' 
-                  : '✗ Incorrect'}
-              </div>
-              <div>
-                <strong>Explanation:</strong> {quizData[currentQuestion]?.explanation}
+                </div>
+              )}
+              
+              {/* Question counter */}
+              <div className="mb-4 text-sm text-gray-500">
+                Question {currentQuestion + 1} of {quizData.length}
               </div>
               
-              {/* Next question button */}
-              {currentQuestion < quizData.length - 1 ? (
-                <button 
-                  onClick={nextQuestion}
-                  className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md"
-                >
-                  Next Question
-                </button>
-              ) : (
-                <button 
-                  onClick={nextQuestion}
-                  className="mt-3 px-4 py-2 bg-green-500 text-white rounded-md"
-                >
-                  Finish Quiz
-                </button>
+              {/* Question */}
+              <h3 className="text-xl font-semibold mb-4">{quizData[currentQuestion]?.question}</h3>
+              
+              {/* Options */}
+              <div className="space-y-3">
+                {quizData[currentQuestion]?.options.map((option, index) => {
+                  // Get all user answers for this question
+                  const questionAnswers = userAnswers[currentQuestion] || {};
+                  const answerCount = Object.values(questionAnswers).filter(ans => ans.answer === index).length;
+                  
+                  // Check if this user selected this option
+                  const isSelected = selectedOption === index;
+                  
+                  // Determine styling based on selection
+                  let bgColor = "bg-gray-100 hover:bg-gray-200";
+                  if (isSelected) {
+                    bgColor = "bg-blue-200";
+                  }
+                  
+                  return (
+                    <button 
+                      key={index}
+                      onClick={() => handleAnswer(index)}
+                      disabled={selectedOption !== null}
+                      className={`block w-full p-3 text-left rounded-md ${bgColor} relative transition`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span>{option}</span>
+                        {answerCount > 0 && (
+                          <span className="px-2 py-1 text-xs bg-gray-200 rounded-full">
+                            {answerCount} {answerCount === 1 ? 'answer' : 'answers'}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Show explanation after selecting an answer */}
+              {selectedOption !== null && (
+                <div className="mt-4 p-3 bg-blue-50 rounded">
+                  <div className="font-semibold mb-1">
+                    {selectedOption === quizData[currentQuestion]?.correctAnswer 
+                      ? '✓ Correct! (+1 point)' 
+                      : '✗ Incorrect'}
+                  </div>
+                  <div>
+                    <strong>Explanation:</strong> {quizData[currentQuestion]?.explanation}
+                  </div>
+                  
+                  {/* Next question button */}
+                  {currentQuestion < quizData.length - 1 ? (
+                    <button 
+                      onClick={nextQuestion}
+                      className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md"
+                    >
+                      Next Question
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={nextQuestion}
+                      className="mt-3 px-4 py-2 bg-green-500 text-white rounded-md"
+                    >
+                      Finish Quiz
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
-        </div>
-      ) : quizStatus === 'completed' || showResults ? (
-        <div>
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 className="text-xl font-bold mb-4">Quiz Results</h3>
-            {renderScoreboard()}
-            
-            {/* Add button to start a new quiz */}
-            <div className="mt-6">
-              <button 
-                onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md"
-              >
-                Start New Quiz
-              </button>
-            </div>
-          </div>
           
-          {/* Show questions with correct answers */}
-          <div className="mt-6 space-y-6">
-            <h3 className="text-xl font-bold">Question Review</h3>
-            {quizData.map((question, qIndex) => (
-              <div key={qIndex} className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-semibold mb-2">{qIndex + 1}. {question.question}</h4>
-                <div className="space-y-2 mb-4">
-                  {question.options.map((option, oIndex) => {
-                    const isCorrect = question.correctAnswer === oIndex;
-                    return (
-                      <div 
-                        key={oIndex} 
-                        className={`p-2 rounded ${isCorrect ? 'bg-green-100 border-l-4 border-green-500' : 'bg-gray-50'}`}
-                      >
-                        {option} {isCorrect && '✓'}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-2 p-3 bg-blue-50 rounded text-sm">
-                  <strong>Explanation:</strong> {question.explanation}
+          {/* Results view */}
+          {(quizStatus === 'completed' || showResults) && (
+            <div>
+              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 className="text-xl font-bold mb-4">Quiz Results</h3>
+                {renderScoreboard()}
+                
+                {/* Add button to start a new quiz */}
+                <div className="mt-6">
+                  <button 
+                    onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                  >
+                    Start New Quiz
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
+              
+              {/* Show questions with correct answers */}
+              <div className="mt-6 space-y-6">
+                <h3 className="text-xl font-bold">Question Review</h3>
+                {quizData.map((question, qIndex) => (
+                  <div key={qIndex} className="bg-white p-4 rounded-lg shadow">
+                    <h4 className="font-semibold mb-2">{qIndex + 1}. {question.question}</h4>
+                    <div className="space-y-2 mb-4">
+                      {question.options.map((option, oIndex) => {
+                        const isCorrect = question.correctAnswer === oIndex;
+                        return (
+                          <div 
+                            key={oIndex} 
+                            className={`p-2 rounded ${isCorrect ? 'bg-green-100 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                          >
+                            {option} {isCorrect && '✓'}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-2 p-3 bg-blue-50 rounded text-sm">
+                      <strong>Explanation:</strong> {question.explanation}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      
+      {/* Emergency reset button */}
+      <div className="mt-6 text-center">
+        <button 
+          onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
+          className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
+        >
+          Reset Quiz
+        </button>
+      </div>
     </div>
   );
 }
