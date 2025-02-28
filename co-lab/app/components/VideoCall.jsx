@@ -200,14 +200,21 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     const handleOffer = (snapshot) => {
       const data = snapshot.val();
       
+      console.log("Received potential offer data:", data); // Enhanced logging
+      
       // Check if this offer is for us
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received offer from ${data.sender}:`, data);
       
-      // Validate offer
-      if (!data.offer || !data.offer.type) {
-        console.error("Invalid offer received:", data.offer);
+      // Enhanced validation
+      if (!data.offer) {
+        console.error("Offer is missing in the data:", data);
+        return;
+      }
+      
+      if (!data.offer.type) {
+        console.error("Offer type is missing:", data.offer);
         return;
       }
       
@@ -243,14 +250,21 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     const handleAnswer = (snapshot) => {
       const data = snapshot.val();
       
+      console.log("Received potential answer data:", data); // Enhanced logging
+      
       // Check if this answer is for us and validate
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received answer from ${data.sender}:`, data);
       
-      // Validate answer
-      if (!data.answer || !data.answer.type) {
-        console.error("Invalid answer received:", data.answer);
+      // Enhanced validation
+      if (!data.answer) {
+        console.error("Answer is missing in the data:", data);
+        return;
+      }
+      
+      if (!data.answer.type) {
+        console.error("Answer type is missing:", data.answer);
         return;
       }
       
@@ -270,14 +284,16 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     const handleCandidate = (snapshot) => {
       const data = snapshot.val();
       
+      console.log("Received potential ICE candidate:", data); // Enhanced logging
+      
       // Check if this candidate is for us and validate
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received ICE candidate from ${data.sender}`);
       
-      // Validate candidate
+      // Enhanced validation
       if (!data.candidate) {
-        console.error("Invalid ICE candidate received");
+        console.error("ICE candidate is missing in the data:", data);
         return;
       }
       
@@ -386,23 +402,66 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     // Create and send an offer if we're the initiator
     if (isInitiator) {
       console.log(`Creating offer for ${participantId}`);
+      
+      // Fix: Wait for all ICE candidates before sending offer
+      let iceCandidatesComplete = false;
+      
+      // Track when ICE gathering is complete
+      pc.onicegatheringstatechange = () => {
+        console.log(`ICE gathering state for ${participantId}: ${pc.iceGatheringState}`);
+        if (pc.iceGatheringState === 'complete') {
+          iceCandidatesComplete = true;
+        }
+      };
+      
       pc.createOffer()
         .then(offer => {
           console.log(`Setting local description for ${participantId}`);
           return pc.setLocalDescription(offer);
         })
         .then(() => {
-          // Make sure local description is set before sending
-          if (pc.localDescription) {
+          // Wait for ICE gathering to complete or timeout after 5 seconds
+          const waitForIceCandidates = new Promise((resolve) => {
+            const checkState = () => {
+              if (iceCandidatesComplete) {
+                resolve();
+              } else if (pc.iceGatheringState === 'complete') {
+                iceCandidatesComplete = true;
+                resolve();
+              }
+            };
+            
+            // Check immediately
+            checkState();
+            
+            // Also set up an interval to check
+            const interval = setInterval(checkState, 500);
+            
+            // And set a timeout to ensure we don't wait forever
+            setTimeout(() => {
+              clearInterval(interval);
+              resolve();
+            }, 5000);
+          });
+          
+          return waitForIceCandidates;
+        })
+        .then(() => {
+          // Make sure local description is set and valid before sending
+          if (pc.localDescription && pc.localDescription.type && pc.localDescription.sdp) {
             console.log(`Sending offer to ${participantId}`);
             const offerRef = push(ref(rtdb, `calls/${roomId}/offers`));
+            
+            // Create a deep copy of the offer to ensure it's fully serialized
+            const offerData = JSON.parse(JSON.stringify(pc.localDescription));
+            
             set(offerRef, {
               sender: user.uid,
               target: participantId,
-              offer: pc.localDescription
+              offer: offerData
             });
           } else {
-            console.error("Local description not set, cannot send offer");
+            console.error("Local description not set or invalid, cannot send offer:", pc.localDescription);
           }
         })
         .catch(error => {
