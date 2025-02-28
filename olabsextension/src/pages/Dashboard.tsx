@@ -3,9 +3,9 @@ import { useAuth } from "../context/AuthContext";
 import getSubjectName from "../utils/getSubjectName";
 import fetchExperimentTitle from "../utils/fetchExperimentTitle";
 import useLiveUsers from "../utils/useLiveUsers";
+import { setUserLiveStatus } from "../utils/useLiveUsers";
 import { FaSignOutAlt, FaGlobe, FaRobot } from "react-icons/fa";
 
-// Define Experiment type
 interface Experiment {
   sub: string;
   sim: string;
@@ -13,10 +13,10 @@ interface Experiment {
 }
 
 export default function Dashboard({ experiment }: { experiment: Experiment | null }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth(); // Assuming user has `user.uid` and `user.displayName`
   const [subjectName, setSubjectName] = useState("Loading...");
   const [experimentName, setExperimentName] = useState("Loading...");
-  const liveUsers = useLiveUsers(experiment?.sim || "");
+  const liveUsers = useLiveUsers(experiment);
 
   useEffect(() => {
     if (experiment) {
@@ -24,6 +24,18 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
       fetchExperimentTitle(window.location.href).then(setExperimentName);
     }
   }, [experiment]);
+
+  useEffect(() => {
+    if (experiment && user) {
+      // Set user as live on mount
+      setUserLiveStatus(experiment, user.uid, user.displayName || "Anonymous", true);
+
+      // Set user as offline on unmount
+      return () => {
+        setUserLiveStatus(experiment, user.uid, "", false);
+      };
+    }
+  }, [experiment, user]);
 
   if (!experiment) {
     return <div className="p-6 text-center">Loading experiment details...</div>;
@@ -49,8 +61,8 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
           <h3 className="text-lg font-semibold">Users Online</h3>
           {liveUsers.length > 0 ? (
             <ul>
-              {liveUsers.map((user, index) => (
-                <li key={index} className="text-gray-700">{user}</li>
+              {liveUsers.map((user) => (
+                <li key={user.id} className="text-gray-700">{user.name}</li>
               ))}
             </ul>
           ) : (
