@@ -1,0 +1,1 @@
+function a(e,t){chrome.storage.local.set({[e]:t},()=>{console.log(`Stored ${e}:`,t)})}function r(){const e=window.location.href,t=new URLSearchParams(new URL(e).search),o=t.get("sub"),n=t.get("sim"),s=t.get("cnt");if(o&&n&&s){const c={sub:o,sim:n,cnt:s};a("experimentDetails",c),console.log("Experiment Details Stored:",c)}}r();

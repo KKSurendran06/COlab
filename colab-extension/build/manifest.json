@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "OLabs Experiment Tracker",
+    "version": "1.0",
+    "description": "Track OLabs experiments and chat with participants in real time.",
+    "permissions": ["storage", "activeTab"],
+    "host_permissions": ["https://www.olabs.edu.in/*"],
+    "background": {
+      "service_worker": "background.js",
+      "type": "module"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.olabs.edu.in/*"],
+        "js": ["content.js"]
+      }
+    ],
+    "action": {
+      "default_popup": "index.html"
+    }
+  }
+  
