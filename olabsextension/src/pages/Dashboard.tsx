@@ -1,10 +1,13 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import getSubjectName from "../utils/getSubjectName";
 import fetchExperimentTitle from "../utils/fetchExperimentTitle";
 import useLiveUsers from "../utils/useLiveUsers";
 import { setUserLiveStatus } from "../utils/useLiveUsers";
-import { FaSignOutAlt, FaGlobe, FaRobot } from "react-icons/fa";
+import { FaSignOutAlt, FaGlobe, FaRobot, FaUsers } from "react-icons/fa";
+import { createGroup } from "../utils/createGroup"; // Import the function
 
 interface Experiment {
   sub: string;
@@ -17,6 +20,7 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
   const [subjectName, setSubjectName] = useState("Loading...");
   const [experimentName, setExperimentName] = useState("Loading...");
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [groupId, setGroupId] = useState<string | null>(null);
   const liveUsers = useLiveUsers(experiment);
 
   useEffect(() => {
@@ -24,7 +28,7 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
       if (experiment) {
         const subject = await getSubjectName(experiment.sub);
         setSubjectName(subject);
-  
+
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
           if (tabs.length > 0 && tabs[0].url) {
             const expTitle = await fetchExperimentTitle(tabs[0].url);
@@ -35,16 +39,32 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
     }
     fetchData();
   }, [experiment]);
-  
 
   useEffect(() => {
     if (experiment && user) {
-      setUserLiveStatus(experiment, user.uid, user.displayName || "Anonymous", true);
+      setUserLiveStatus(experiment, user.uid, user.displayName || "Anonymous", user.email || "N/A", true);
+
       return () => {
-        setUserLiveStatus(experiment, user.uid, "", false);
+        setUserLiveStatus(experiment, user.uid, "", "", false);
       };
     }
   }, [experiment, user]);
+
+  const handleCreateGroup = async () => {
+    if (!experiment || !user) {
+      alert("Cannot create group. Missing experiment details or user not logged in.");
+      return;
+    }
+
+    try {
+      const groupName = `${experimentName}`;
+      const newGroupId = await createGroup(groupName, subjectName, experiment.sim);
+      setGroupId(newGroupId);
+      console.log("Group created with ID:", newGroupId);
+    } catch (error) {
+      console.error("Failed to create group:", error);
+    }
+  };
 
   const handleAIExplanation = async () => {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -54,12 +74,12 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
 
         try {
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC5JJ8UDOsoyVTIGZDFwvUdF0zV6liVHfs`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                contents: [{ parts: [{ text: `${url} go to this url and explain me the steps in a summarised way within points` }] }],
+                contents: [{ parts: [{ text: `Explain nicely the steps of the experiment titled "${experimentName}" in a summarized way using bullet points.` }] }],
               }),
             }
           );
@@ -115,7 +135,7 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
             <ul className="list-disc list-inside">
               {liveUsers.map((user) => (
                 <li key={user.id} className="text-sm">
-                  {user.name}
+                  {user.email}
                 </li>
               ))}
             </ul>
@@ -136,11 +156,31 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
           >
             <FaRobot /> AI Explanation
           </button>
+          <button
+            className="w-full py-2 px-4 bg-green-500 text-white rounded-md flex items-center justify-center gap-2"
+            onClick={handleCreateGroup}
+          >
+            <FaUsers /> Create Group
+          </button>
         </div>
+        {groupId && (
+          <div className="mt-4 p-4 border rounded-md bg-green-100">
+            <h3 className="text-lg font-semibold mb-2">Group Created</h3>
+            <p className="text-sm">Group ID: {groupId}</p>
+          </div>
+        )}
         {aiResponse && (
           <div className="mt-4 p-4 border rounded-md bg-gray-50">
             <h3 className="text-lg font-semibold mb-2">AI Summary</h3>
-            <p className="text-sm">{aiResponse}</p>
+            {aiResponse.includes("\n") ? (
+              <ul className="list-disc list-inside text-sm">
+                {aiResponse.split("\n").map((point, index) =>
+                  point.trim() ? <li key={index}>{point}</li> : null
+                )}
+              </ul>
+            ) : (
+              <p className="text-sm">{aiResponse}</p>
+            )}
           </div>
         )}
       </div>

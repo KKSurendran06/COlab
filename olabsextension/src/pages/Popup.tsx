@@ -37,7 +37,7 @@ export default function AIExplanation() {
       );
 
       const data = await response.json();
-      console.log("Full API Response:", data); // Debugging output
+      console.log("Full API Response:", data); 
 
       const explanation =
         data.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response received.";
