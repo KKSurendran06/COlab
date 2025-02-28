@@ -1,5 +1,5 @@
-// app/layout.js
 import { AuthContextProvider } from './context/AuthContext';
+import Chatbot from './components/Chatbot';
 import './globals.css';
 
 export const metadata = {
@@ -13,6 +13,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthContextProvider>
           {children}
+          <Chatbot /> 
         </AuthContextProvider>
       </body>
     </html>
