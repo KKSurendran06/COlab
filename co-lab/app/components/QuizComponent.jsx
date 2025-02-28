@@ -105,11 +105,12 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     };
   }, [groupId, currentUser]);
 
-  // Check if all users are ready and start countdown
+  // Check if enough users are ready and start countdown
   useEffect(() => {
-    if (quizStatus === 'ready' && Object.keys(readyUsers).length >= 2) {
-      // If at least 2 participants are ready, start the countdown
-      if (countdownToStart === null) {
+    if (quizStatus === 'ready') {
+      const readyCount = Object.keys(readyUsers).length;
+      // Modified this condition to check for at least 2 ready users
+      if (readyCount >= 2 && countdownToStart === null) {
         // Start 5-second countdown
         update(ref(rtdb, `groups/${groupId}/quiz`), {
           countdownToStart: 5
@@ -158,16 +159,21 @@ export default function LiveQuiz({ groupId, topic, userId }) {
 
   // Toggle user ready status
   async function toggleReady() {
-    setUserReady(!userReady);
+    const newReadyStatus = !userReady;
+    setUserReady(newReadyStatus);
+    
     const readyUserRef = ref(rtdb, `groups/${groupId}/readyUsers/${currentUser}`);
     
-    if (!userReady) {
+    if (newReadyStatus) {
       // Setting user as ready
       await set(readyUserRef, true);
     } else {
       // Setting user as not ready
       await remove(readyUserRef);
     }
+    
+    // Log the ready status for debugging
+    console.log(`User ${currentUser} is now ${newReadyStatus ? 'ready' : 'not ready'}`);
   }
 
   // Generate a new quiz (can be called by any user when quiz is inactive)
@@ -262,6 +268,11 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     // Reset ready status for all users
     await remove(ref(rtdb, `groups/${groupId}/readyUsers`));
     setUserReady(false);
+    
+    // Reset scores
+    await remove(ref(rtdb, `groups/${groupId}/scores`));
+    
+    console.log("Quiz started!");
   }
 
   // Submit an answer for the current question
@@ -283,6 +294,8 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       const userScoreRef = ref(rtdb, `groups/${groupId}/scores/${currentUser}`);
       const userScore = scores[currentUser] || 0;
       await set(userScoreRef, userScore + 1);
+      
+      console.log(`User ${currentUser} got question ${currentQuestion} correct! New score: ${userScore + 1}`);
     }
   }
 
@@ -303,7 +316,19 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     }
   }
 
-  // Render scoreboard
+  // Display user score during quiz
+  function renderUserScore() {
+    const userScore = scores[currentUser] || 0;
+    return (
+      <div className="mb-4 text-center">
+        <div className="inline-block px-4 py-2 rounded-full bg-green-100 text-green-800">
+          Your Score: {userScore} {userScore === 1 ? 'point' : 'points'}
+        </div>
+      </div>
+    );
+  }
+
+  // Render scoreboard (simplified)
   function renderScoreboard() {
     const sortedScores = Object.entries(scores)
       .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
@@ -315,7 +340,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
 
     return (
       <div className="bg-white p-4 rounded-lg shadow">
-        <h3 className="text-xl font-bold mb-4">Scoreboard</h3>
+        <h3 className="text-xl font-bold mb-4">Points</h3>
         <div className="space-y-2">
           {sortedScores.map((entry, index) => (
             <div key={entry.userId} className="flex justify-between items-center">
@@ -333,6 +358,8 @@ export default function LiveQuiz({ groupId, topic, userId }) {
 
   // Render ready users indicators
   function renderReadyStatus() {
+    const readyCount = Object.keys(readyUsers).length;
+    
     return (
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-2">Ready Status</h3>
@@ -353,7 +380,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
           })}
         </div>
         
-        {quizStatus === 'ready' && (
+        <div className="flex items-center justify-between">
           <button
             onClick={toggleReady}
             className={`px-4 py-2 rounded-md ${userReady 
@@ -362,7 +389,11 @@ export default function LiveQuiz({ groupId, topic, userId }) {
           >
             {userReady ? 'Not Ready' : 'I\'m Ready'}
           </button>
-        )}
+          
+          <div className="text-sm text-gray-600">
+            {readyCount}/2 users ready
+          </div>
+        </div>
         
         {countdownToStart !== null && (
           <div className="mt-4 text-center">
@@ -393,6 +424,9 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       
       {/* Ready status (only show when quiz is ready) */}
       {quizStatus === 'ready' && renderReadyStatus()}
+      
+      {/* User Score (only show during active quiz) */}
+      {quizStatus === 'active' && renderUserScore()}
       
       {/* Quiz status */}
       {loading ? (
@@ -446,7 +480,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
               const questionAnswers = userAnswers[currentQuestion] || {};
               const answerCount = Object.values(questionAnswers).filter(ans => ans.answer === index).length;
               
-              // Check if this is the correct answer
+              // Check if this is the correct answer (only show after answering)
               const isCorrect = quizData[currentQuestion]?.correctAnswer === index;
               
               // Check if this user selected this option
@@ -477,6 +511,37 @@ export default function LiveQuiz({ groupId, topic, userId }) {
               );
             })}
           </div>
+          
+          {/* Show explanation after selecting an answer */}
+          {selectedOption !== null && (
+            <div className="mt-4 p-3 bg-blue-50 rounded">
+              <div className="font-semibold mb-1">
+                {selectedOption === quizData[currentQuestion]?.correctAnswer 
+                  ? '✓ Correct! (+1 point)' 
+                  : '✗ Incorrect'}
+              </div>
+              <div>
+                <strong>Explanation:</strong> {quizData[currentQuestion]?.explanation}
+              </div>
+              
+              {/* Next question button */}
+              {currentQuestion < quizData.length - 1 ? (
+                <button 
+                  onClick={nextQuestion}
+                  className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md"
+                >
+                  Next Question
+                </button>
+              ) : (
+                <button 
+                  onClick={nextQuestion}
+                  className="mt-3 px-4 py-2 bg-green-500 text-white rounded-md"
+                >
+                  Finish Quiz
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : quizStatus === 'completed' || showResults ? (
         <div>
