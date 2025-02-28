@@ -10,6 +10,7 @@ import OnlineUsers from '../components/OnlineUsers';
 import UserGroups from '../components/UserGroups';
 import Whiteboard from '../components/Whiteboard';
 import VideoCall from '../components/VideoCall';
+import Notes from '../components/Notes';
 import { setupPresence } from '../utils/presence';
 
 export default function Dashboard() {
@@ -18,7 +19,7 @@ export default function Dashboard() {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState('chat'); // chat, whiteboard, video
+  const [activeTab, setActiveTab] = useState('chat'); // chat, whiteboard, video, notes
   const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
@@ -155,6 +156,12 @@ export default function Dashboard() {
                 >
                   Video Call
                 </button>
+                <button
+                  onClick={() => setActiveTab('notes')}
+                  className={`py-4 px-4 font-medium text-sm ${activeTab === 'notes' ? 'text-white border-b-2 border-[#7289DA]' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Notes
+                </button>
               </div>
               
               {/* Content area */}
@@ -162,6 +169,7 @@ export default function Dashboard() {
                 {activeTab === 'chat' && <GroupChat group={selectedGroup} />}
                 {activeTab === 'whiteboard' && <Whiteboard groupId={selectedGroup.id} />}
                 {activeTab === 'video' && <VideoCall groupId={selectedGroup.id} />}
+                {activeTab === 'notes' && <Notes groupId={selectedGroup.id} />}
               </div>
             </>
           ) : (
