@@ -20,11 +20,22 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
   const liveUsers = useLiveUsers(experiment);
 
   useEffect(() => {
-    if (experiment) {
-      getSubjectName(experiment.sub).then(setSubjectName);
-      fetchExperimentTitle(window.location.href).then(setExperimentName);
+    async function fetchData() {
+      if (experiment) {
+        const subject = await getSubjectName(experiment.sub);
+        setSubjectName(subject);
+  
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs.length > 0 && tabs[0].url) {
+            const expTitle = await fetchExperimentTitle(tabs[0].url);
+            setExperimentName(expTitle);
+          }
+        });
+      }
     }
+    fetchData();
   }, [experiment]);
+  
 
   useEffect(() => {
     if (experiment && user) {
@@ -43,7 +54,7 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
 
         try {
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC5JJ8UDOsoyVTIGZDFwvUdF0zV6liVHfs`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -80,14 +91,12 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
     <div className="p-4 bg-gray-100 min-h-screen flex flex-col items-center">
       <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-semibold mb-4 text-center">Dashboard</h2>
-
         <button
           className="w-full py-2 px-4 bg-red-500 text-white rounded-md mb-4 flex items-center justify-center gap-2"
           onClick={logout}
         >
           <FaSignOutAlt /> Logout
         </button>
-
         <div className="mb-4 p-4 border rounded-md bg-gray-50">
           <h3 className="text-lg font-semibold mb-2">Current Experiment</h3>
           <p className="text-sm">
@@ -100,7 +109,6 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
             <span className="font-medium">Step:</span> {experiment.cnt}
           </p>
         </div>
-
         <div className="mb-4 p-4 border rounded-md bg-gray-50">
           <h3 className="text-lg font-semibold mb-2">Users Online</h3>
           {liveUsers.length > 0 ? (
@@ -115,7 +123,6 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
             <p className="text-sm">No users online</p>
           )}
         </div>
-
         <div className="flex flex-col gap-2">
           <button
             className="w-full py-2 px-4 bg-blue-500 text-white rounded-md flex items-center justify-center gap-2"
@@ -130,7 +137,6 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
             <FaRobot /> AI Explanation
           </button>
         </div>
-
         {aiResponse && (
           <div className="mt-4 p-4 border rounded-md bg-gray-50">
             <h3 className="text-lg font-semibold mb-2">AI Summary</h3>
