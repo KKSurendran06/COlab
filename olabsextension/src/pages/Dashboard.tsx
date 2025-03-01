@@ -220,7 +220,7 @@ export default function Dashboard({ experiment }: { experiment: Experiment | nul
               
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => window.open("https://www.olabs.edu.in", "_blank")}
+                  onClick={() => window.open("http://localhost:3000/", "_blank")}
                   className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                   <FaGlobe className="text-lg" /> Main Website
