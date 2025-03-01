@@ -356,7 +356,7 @@ export default function Dashboard() {
             {/* My next lessons and Recommended group in same line */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               {/* My next lessons section - takes up 2/3 */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden md:col-span-2 border border-gray-100">
+              <div className="bg-white rounded-3xl shadow-sm overflow-hidden md:col-span-2 border-2 border-black">
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold text-gray-800">My Groups</h2>
@@ -368,41 +368,27 @@ export default function Dashboard() {
                       <tr className="text-left text-gray-500 text-sm">
                         <th className="pb-2">Group</th>
                         <th className="pb-2">Subject</th>
-                        <th className="pb-2">Members</th>
-                        <th className="pb-2">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {userGroups.length === 0 ? (
                         <tr>
-                          <td colSpan="4" className="py-6 text-center text-gray-500">
+                          <td colSpan="4" className="py-4 text-center text-gray-500">
                             No groups available. Create one to get started!
                           </td>
                         </tr>
                       ) : (
                         userGroups.slice(0, 5).map((group) => (
-                          <tr key={group.id} className="border-t border-gray-100">
-                            <td className="py-4">
+                          <tr key={group.id} className="border-t border-gray-100" onClick={() => handleGroupSelect(group)}> 
+                            <td className="py-3">
                               <div>
-                                <p className="font-medium">{group.name}</p>
-                                <p className="text-sm text-gray-500">Created: {group.createdAt?.toLocaleDateString() || 'Recently'}</p>
+                                <p className="font-medium text-black ">{group.name}</p>
                               </div>
                             </td>
                             <td className="py-4">
-                              <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">
+                              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                                 {group.subject}
                               </span>
-                            </td>
-                            <td className="py-4">
-                              <span className="text-gray-700">{group.membersCount || 0} members</span>
-                            </td>
-                            <td className="py-4">
-                              <button 
-                                onClick={() => handleGroupSelect(group)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
-                              >
-                                Join
-                              </button>
                             </td>
                           </tr>
                         ))
@@ -423,9 +409,9 @@ export default function Dashboard() {
                         <span className="inline-block px-3 py-1 bg-yellow-500 text-black text-xs font-medium rounded-full mb-2">
                           {userGroups[0]?.subject || 'Computer Science'}
                         </span>
-                        <h3 className="text-xl font-bold mb-4">{userGroups[0]?.name || 'Data Analysis Fundamentals'}</h3>
+                        <h3 className="text-lg font-bold mb-3">{userGroups[0]?.name || 'Data Analysis Fundamentals'}</h3>
                         
-                        <div className="mt-4">
+                        <div className="mt-3">
                           <div className="flex -space-x-2 overflow-hidden mb-2">
                             {/* Show a few avatars */}
                             <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-blue-500 flex items-center justify-center">
@@ -443,7 +429,7 @@ export default function Dashboard() {
                         
                         <button 
                           onClick={() => handleGroupSelect(userGroups[0])}
-                          className="mt-6 w-full bg-[#ff5722] hover:bg-[#e64a19] text-white py-3 px-4 rounded-lg text-sm font-medium"
+                          className="mt-6 w-full bg-[#ff5722] hover:bg-[#e64a19] text-white py- px-4 rounded-lg text-sm font-medium"
                         >
                           Join Group
                         </button>
