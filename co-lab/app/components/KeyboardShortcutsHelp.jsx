@@ -5,7 +5,6 @@ const KeyboardShortcutsHelp = ({ isOpen, onClose }) => {
   
   if (!isOpen) return null;
   
-  // Group shortcuts by category based on their action prefix
   const groupedShortcuts = Object.entries(shortcuts).reduce((groups, [key, data]) => {
     let category = 'General';
     

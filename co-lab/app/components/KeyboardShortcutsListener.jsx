@@ -9,7 +9,6 @@ const KeyboardShortcutsListener = ({ onActionTriggered }) => {
   const handleKeyDown = useCallback((event) => {
     if (!isListenerActive) return;
     
-    // Skip if user is typing in an input, textarea, or contentEditable element
     if (
       event.target.tagName === 'INPUT' || 
       event.target.tagName === 'TEXTAREA' || 
@@ -18,24 +17,20 @@ const KeyboardShortcutsListener = ({ onActionTriggered }) => {
       return;
     }
     
-    // Create key combination string (e.g., "alt+shift+c")
     let keyCombo = [];
     if (event.ctrlKey) keyCombo.push('ctrl');
     if (event.altKey) keyCombo.push('alt');
     if (event.shiftKey) keyCombo.push('shift');
-    if (event.metaKey) keyCombo.push('meta'); // Command key on Mac
+    if (event.metaKey) keyCombo.push('meta'); 
     
-    // Add the pressed key in lowercase
     keyCombo.push(event.key.toLowerCase());
     const keyString = keyCombo.join('+');
     
-    // Check if this key combination is in our shortcuts
     if (shortcuts[keyString]) {
       event.preventDefault();
       
       const { action } = shortcuts[keyString];
       
-      // Pass the action to the parent component to handle
       if (onActionTriggered) {
         onActionTriggered(action);
       }
@@ -50,7 +45,7 @@ const KeyboardShortcutsListener = ({ onActionTriggered }) => {
     };
   }, [handleKeyDown]);
   
-  return null; // This is a non-visual component
+  return null; 
 };
 
 export default KeyboardShortcutsListener;

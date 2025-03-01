@@ -29,19 +29,16 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     
     e.preventDefault();
     
-    // Only allow modifier + key combinations
     const modifiers = [];
     if (e.ctrlKey) modifiers.push('ctrl');
     if (e.altKey) modifiers.push('alt');
     if (e.shiftKey) modifiers.push('shift');
     if (e.metaKey) modifiers.push('meta');
     
-    // Skip if it's just a modifier key being pressed
     if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
       return;
     }
     
-    // Require at least one modifier
     if (modifiers.length === 0) {
       setError('Please include at least one modifier key (Ctrl, Alt, Shift)');
       return;
@@ -51,7 +48,6 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     setNewShortcutKeys(keyCombo);
     setRecordingNewShortcut(false);
     
-    // Attempt to save the new shortcut
     saveNewShortcut(keyCombo.join('+'));
   };
   
