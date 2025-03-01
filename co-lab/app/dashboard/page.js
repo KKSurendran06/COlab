@@ -17,6 +17,8 @@ import { setupPresence } from "../utils/presence";
 import LiveQuiz from "../components/QuizComponent";
 import DashboardLayout from "../components/sidebar";
 import { getAvailableGroups } from "../utils/groups";
+import AITutor from "../components/aitutor";
+import BrailleGenerator from "../components/braile";
 
 export default function Dashboard() {
   const { user, logout, userPoints } = useAuth();
@@ -28,7 +30,9 @@ export default function Dashboard() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [userGroups, setUserGroups] = useState([]);
-  const [showFontSettings, setShowFontSettings] = useState(false); 
+  const [showFontSettings, setShowFontSettings] = useState(false);
+  const [showTutor, setShowTutor] = useState(false);
+
   const {
     fontSize,
     fontFamily,
@@ -332,6 +336,16 @@ export default function Dashboard() {
                 >
                   Live Quiz
                 </button>
+            <button
+              onClick={() => setActiveTab("braille")} // Show the AI Tutor component
+              className={`py-4 px-4 font-medium text-sm ${
+                activeTab === "quiz"
+                  ? "text-[#ff9800] border-b-2 border-[#ff9800]"
+                  : "text-gray-600 hover:text-[#ff9800]"
+              }`}
+            >
+              Braille Report
+            </button>
               </div>
 
               <div className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm h-[600px]">                {activeTab === "chat" && <GroupChat group={selectedGroup} />}
@@ -344,6 +358,9 @@ export default function Dashboard() {
                 {activeTab === "notes" && <Notes groupId={selectedGroup.id} />}
                 {activeTab === "quiz" && (
                   <LiveQuiz groupId={selectedGroup.name} />
+                )}
+                {activeTab === "braille" && (
+                  <BrailleGenerator query={selectedGroup.name} />
                 )}
               </div>
             </>
