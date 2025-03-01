@@ -191,16 +191,13 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       await remove(readyUserRef);
     }
     
-    // Log the ready status for debugging
     console.log(`User ${currentUser} is now ${newReadyStatus ? 'ready' : 'not ready'}`);
   }
   
-  // Generate a new quiz (can be called by any user when quiz is inactive)
   async function generateNewQuiz() {
     setLoading(true);
     
     try {
-      // Reset quiz status first
       await set(ref(rtdb, `groups/${groupId}/quiz`), {
         status: 'generating',
         currentQuestion: 0,
@@ -210,16 +207,13 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         countdownToStart: null
       });
       
-      // Clear previous answers and scores
       await remove(ref(rtdb, `groups/${groupId}/answers`));
       await remove(ref(rtdb, `groups/${groupId}/scores`));
       await remove(ref(rtdb, `groups/${groupId}/readyUsers`));
       
-      // First clear old questions properly
       const quizCollection = collection(db, 'quizzes', groupId, 'questions');
       const querySnapshot = await getDocs(query(quizCollection));
       
-      // Delete all existing questions
       const deletePromises = [];
       querySnapshot.forEach((doc) => {
         deletePromises.push(deleteDoc(doc.ref));
@@ -230,7 +224,6 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         console.log(`Deleted ${deletePromises.length} existing questions`);
       }
       
-      // Generate quiz with Gemini API
       const prompt = `Generate a quiz with 5 multiple-choice questions about ${topic}. 
         Format as a JSON array with objects containing:
         1. question (string)
@@ -431,70 +424,79 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         score,
         name: participants.find(p => p.userId === userId)?.displayName || userId.substring(0, 5)
       }));
+  
     return (
-      <div className="bg-white p-4 rounded-lg shadow">
-        <h3 className="text-xl font-bold mb-4">Points</h3>
-        <div className="space-y-2">
+      <div className="bg-gray-100 p-6 rounded-lg shadow-lg border border-gray-300 text-black">
+        <h3 className="text-2xl font-bold mb-4 text-center">Points</h3>
+        <div className="space-y-3">
           {sortedScores.length > 0 ? (
             sortedScores.map((entry, index) => (
-              <div key={entry.userId} className="flex justify-between items-center">
+              <div key={entry.userId} className="flex justify-between items-center bg-white p-2 rounded shadow-md">
                 <div className="flex items-center">
-                  <span className="mr-2 font-bold">{index + 1}.</span>
-                  <span>{entry.name}</span>
+                  <span className="mr-3 font-bold text-lg">{index + 1}.</span>
+                  <span className="text-lg">{entry.name}</span>
                 </div>
-                <span className="font-semibold">{entry.score} points</span>
+                <span className="font-semibold text-lg">{entry.score} points</span>
               </div>
             ))
           ) : (
-            <div className="text-center text-gray-500">No scores yet</div>
+            <div className="text-center text-gray-600 text-lg">No scores yet</div>
           )}
         </div>
       </div>
     );
   }
   
+  
   // Render ready users indicators
   function renderReadyStatus() {
     const readyCount = Object.keys(readyUsers).length;
-    
+  
     return (
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">Ready Status ({readyCount}/{participants.length})</h3>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {participants.map(participant => {
+      <div className="mb-6 p-4 bg-white shadow-md rounded-lg">
+        <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">
+          Ready Status ({readyCount}/{participants.length})
+        </h3>
+  
+        <div className="flex flex-wrap gap-3 justify-center">
+          {participants.map((participant) => {
             const isReady = readyUsers[participant.userId];
             return (
-              <div 
-                key={participant.userId} 
-                className={`px-3 py-1 rounded-full text-sm ${isReady 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'}`}
+              <div
+                key={participant.userId}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  isReady
+                    ? "bg-green-500 text-white shadow-md"
+                    : "bg-gray-300 text-gray-800"
+                }`}
               >
                 {participant.displayName || participant.userId.substring(0, 5)}
-                {isReady ? ' ✓' : ''}
+                {isReady ? " ✓" : ""}
               </div>
             );
           })}
         </div>
-        
-        <div className="flex items-center justify-between">
+  
+        <div className="flex items-center justify-between mt-4">
           <button
             onClick={toggleReady}
-            className={`px-4 py-2 rounded-md ${userReady 
-              ? 'bg-red-500 text-white' 
-              : 'bg-green-500 text-white'}`}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
+              userReady
+                ? "bg-red-500 hover:bg-red-600 text-white shadow-lg"
+                : "bg-green-500 hover:bg-green-600 text-white shadow-lg"
+            }`}
           >
-            {userReady ? 'Not Ready' : 'I\'m Ready'}
+            {userReady ? "Not Ready" : "I'm Ready"}
           </button>
-          
-          <div className="text-sm text-gray-600">
+  
+          <div className="text-md text-gray-700 font-medium">
             {readyCount}/{participants.length} users ready
           </div>
         </div>
-        
+  
         {countdownToStart !== null && (
-          <div className="mt-4 text-center">
-            <div className="text-2xl font-bold">
+          <div className="mt-6 text-center">
+            <div className="text-3xl font-bold text-purple-600 animate-pulse">
               Quiz starting in {countdownToStart}...
             </div>
           </div>
@@ -503,253 +505,195 @@ export default function LiveQuiz({ groupId, topic, userId }) {
     );
   }
   
-  // Add function to render quiz controls
+  // Function to render quiz controls
   function renderQuizControls() {
     // If quiz is inactive, show generate button
-    if (quizStatus === 'inactive') {
+    if (quizStatus === "inactive") {
       return (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <p className="mb-4">No active quiz. Click below to generate a new quiz.</p>
-          <button 
+        <div className="text-center py-8 bg-gray-100 rounded-lg shadow-md">
+          <p className="mb-4 text-lg text-gray-800 font-medium">
+            No active quiz. Click below to generate a new quiz.
+          </p>
+          <button
             onClick={generateNewQuiz}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-md transition-all duration-300"
           >
             Generate New Quiz
           </button>
         </div>
       );
     }
-    
+  
     // If quiz is in error state, show retry button
-    if (quizStatus === 'error') {
+    if (quizStatus === "error") {
       return (
-        <div className="text-center py-8 bg-red-50 rounded-lg">
-          <p className="mb-4">There was an error generating the quiz. Please try again.</p>
-          <button 
+        <div className="text-center py-8 bg-red-100 rounded-lg shadow-md">
+          <p className="mb-4 text-lg text-red-700 font-medium">
+            There was an error generating the quiz. Please try again.
+          </p>
+          <button
             onClick={generateNewQuiz}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-md transition-all duration-300"
           >
             Retry
           </button>
         </div>
       );
     }
-    
-    // If quiz is generating, show loading
-    if (quizStatus === 'generating') {
+  
+    // If quiz is generating, show loading animation
+    if (quizStatus === "generating") {
       return (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Generating quiz questions...</p>
+        <div className="text-center py-8 bg-gray-100 rounded-lg shadow-md">
+          <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-lg text-gray-700 font-medium">Generating quiz questions...</p>
         </div>
       );
     }
-    
+  
     // If quiz is ready, show ready UI and force start
-    if (quizStatus === 'ready') {
+    if (quizStatus === "ready") {
       return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-bold mb-4">Quiz is Ready!</h3>
+        <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
+          <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+            🎉 Quiz is Ready!
+          </h3>
           {renderReadyStatus()}
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <button
               onClick={startQuiz}
-              className="px-4 py-2 bg-purple-500 text-white rounded-md"
+              className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-md transition-all duration-300"
             >
-              Start Quiz Now
+              Start Quiz Now 🚀
             </button>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-md text-gray-500 mt-2">
               Use this button to start the quiz immediately.
             </p>
           </div>
         </div>
       );
     }
-    
+  
     return null;
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Live Quiz: {topic}</h2>
-      
-      {/* Debug info - always visible */}
-      <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
-        <p>Status: {quizStatus} | Questions: {quizData.length} | Current: {currentQuestion}</p>
-      </div>
-      
-      {/* Participants list */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">Participants ({participants.length})</h3>
-        <div className="flex flex-wrap gap-2">
-          {participants.map(participant => (
-            <div key={participant.userId} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-              {participant.displayName || participant.userId.substring(0, 5)}
-            </div>
-          ))}
+      <div className="max-w-4xl mx-auto p-6 bg-white shadow-xl rounded-lg">
+        <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Live Quiz: {topic}</h2>
+        
+        {/* Debug Info */}
+        <div className="mb-4 p-3 bg-gray-50 border rounded-md text-xs text-gray-600">
+          <p>Status: {quizStatus} | Questions: {quizData.length} | Current: {currentQuestion + 1}</p>
         </div>
-      </div>
-      
-      {/* Handle loading state */}
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Loading quiz...</p>
+        
+        {/* Participants */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2 text-gray-700">Participants ({participants.length})</h3>
+          <div className="flex flex-wrap gap-2">
+            {participants.map(participant => (
+              <div key={participant.userId} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                {participant.displayName || participant.userId.substring(0, 5)}
+              </div>
+            ))}
+          </div>
         </div>
-      ) : (
-        <>
-          {/* Quiz controls - Generate/Start buttons */}
-          {!['active', 'completed'].includes(quizStatus) && renderQuizControls()}
-          
-          {/* User Score (only show during active quiz) */}
-          {quizStatus === 'active' && renderUserScore()}
-          
-          {/* Active quiz content */}
-          {quizStatus === 'active' && quizData.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              {/* Timer */}
-              {timeLeft !== null && (
-                <div className="mb-4 text-center">
-                  <div className={`inline-block px-4 py-2 rounded-full ${timeLeft <= 10 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                    Time left: {timeLeft}s
+        
+        {/* Loading State */}
+        {loading ? (
+          <div className="text-center py-10">
+            <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-700">Loading quiz...</p>
+          </div>
+        ) : (
+          <>
+            {!['active', 'completed'].includes(quizStatus) && renderQuizControls()}
+            {quizStatus === 'active' && renderUserScore()}
+            {quizStatus === 'active' && quizData.length > 0 && (
+              <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+                {timeLeft !== null && (
+                  <div className="mb-4 text-center">
+                    <div className={`inline-block px-4 py-2 rounded-full text-lg font-semibold ${timeLeft <= 10 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>Time left: {timeLeft}s</div>
+                  </div>
+                )}
+                <h3 className="text-xl font-semibold mb-4 text-gray-900">{quizData[currentQuestion]?.question}</h3>
+                <div className="space-y-3">
+                  {quizData[currentQuestion]?.options?.map((option, index) => {
+                    const isSelected = selectedOption === index;
+                    let bgColor = "border border-gray-400 bg-white hover:bg-gray-100 text-black";
+                    if (isSelected) {
+                          bgColor = "bg-blue-500 text-white font-bold";
+                        }
+
+                    return (
+                      <button 
+                        key={index}
+                        onClick={() => handleAnswer(index)}
+                        disabled={selectedOption !== null}
+                        className={`block w-full p-4 text-left rounded-lg transition font-medium ${bgColor}`}
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedOption !== null && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg text-gray-800">
+                    <div className="font-semibold mb-1">
+                      {selectedOption === quizData[currentQuestion]?.correctAnswer ? '✓ Correct! (+1 point)' : '✗ Incorrect'}
+                    </div>
+                    <div><strong>Explanation:</strong> {quizData[currentQuestion]?.explanation}</div>
+                    <button 
+                      onClick={nextQuestion}
+                      className={`mt-4 px-6 py-2 rounded-md text-white font-medium transition shadow-md hover:shadow-lg ${currentQuestion < quizData.length - 1 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'}`}
+                    >
+                      {currentQuestion < quizData.length - 1 ? 'Next Question' : 'Finish Quiz'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {(quizStatus === 'completed' || showResults) && (
+              <div className="mt-6">
+                <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                  <h3 className="text-2xl font-bold mb-4 text-gray-800">Quiz Results</h3>
+                  {renderScoreboard()}
+                  <div className="mt-6 text-center">
+                    <button 
+                      onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 transition"
+                    >
+                      Start New Quiz
+                    </button>
                   </div>
                 </div>
-              )}
-              
-              {/* Question counter */}
-              <div className="mb-4 text-sm text-gray-500">
-                Question {currentQuestion + 1} of {quizData.length}
-              </div>
-              
-              {/* Question */}
-              <h3 className="text-xl font-semibold mb-4">{quizData[currentQuestion]?.question}</h3>
-              
-              {/* Options */}
-              <div className="space-y-3">
-                {quizData[currentQuestion]?.options.map((option, index) => {
-                  // Get all user answers for this question
-                  const questionAnswers = userAnswers[currentQuestion] || {};
-                  const answerCount = Object.values(questionAnswers).filter(ans => ans.answer === index).length;
-                  
-                  // Check if this user selected this option
-                  const isSelected = selectedOption === index;
-                  
-                  // Determine styling based on selection
-                  let bgColor = "bg-gray-100 hover:bg-gray-200";
-                  if (isSelected) {
-                    bgColor = "bg-blue-200";
-                  }
-                  
-                  return (
-                    <button 
-                      key={index}
-                      onClick={() => handleAnswer(index)}
-                      disabled={selectedOption !== null}
-                      className={`block w-full p-3 text-left rounded-md ${bgColor} relative transition`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span>{option}</span>
-                        {answerCount > 0 && (
-                          <span className="px-2 py-1 text-xs bg-gray-200 rounded-full">
-                            {answerCount} {answerCount === 1 ? 'answer' : 'answers'}
-                          </span>
-                        )}
+                <h3 className="text-xl font-bold mb-4 text-gray-900">Question Review</h3>
+                    {quizData.map((question, qIndex) => (
+                      <div key={qIndex} className="bg-gray-100 p-4 rounded-lg shadow">
+                        <h4 className="font-semibold mb-2 text-black">{qIndex + 1}. {question.question}</h4>
+                        <div className="space-y-2">
+                          {question.options?.map((option, oIndex) => (
+                            <div key={oIndex} className={`p-3 rounded-md text-black ${question.correctAnswer === oIndex ? 'bg-green-200 border-l-4 border-green-600' : 'bg-gray-200'}`}>
+                              {option} {question.correctAnswer === oIndex && '✓'}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 p-3 bg-blue-200 rounded text-sm text-gray-900">
+                          <strong>Explanation:</strong> {question.explanation}
+                        </div>
                       </div>
-                    </button>
-                  );
-                })}
+                    ))}
               </div>
-              
-              {/* Show explanation after selecting an answer */}
-              {selectedOption !== null && (
-                <div className="mt-4 p-3 bg-blue-50 rounded">
-                  <div className="font-semibold mb-1">
-                    {selectedOption === quizData[currentQuestion]?.correctAnswer 
-                      ? '✓ Correct! (+1 point)' 
-                      : '✗ Incorrect'}
-                  </div>
-                  <div>
-                    <strong>Explanation:</strong> {quizData[currentQuestion]?.explanation}
-                  </div>
-                  
-                  {/* Next question button */}
-                  {currentQuestion < quizData.length - 1 ? (
-                    <button 
-                      onClick={nextQuestion}
-                      className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md"
-                    >
-                      Next Question
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={nextQuestion}
-                      className="mt-3 px-4 py-2 bg-green-500 text-white rounded-md"
-                    >
-                      Finish Quiz
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Results view */}
-          {(quizStatus === 'completed' || showResults) && (
-            <div>
-              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-                <h3 className="text-xl font-bold mb-4">Quiz Results</h3>
-                {renderScoreboard()}
-                
-                {/* Add button to start a new quiz */}
-                <div className="mt-6">
-                  <button 
-                    onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md"
-                  >
-                    Start New Quiz
-                  </button>
-                </div>
-              </div>
-              
-              {/* Show questions with correct answers */}
-              <div className="mt-6 space-y-6">
-                <h3 className="text-xl font-bold">Question Review</h3>
-                {quizData.map((question, qIndex) => (
-                  <div key={qIndex} className="bg-white p-4 rounded-lg shadow">
-                    <h4 className="font-semibold mb-2">{qIndex + 1}. {question.question}</h4>
-                    <div className="space-y-2 mb-4">
-                      {question.options.map((option, oIndex) => {
-                        const isCorrect = question.correctAnswer === oIndex;
-                        return (
-                          <div 
-                            key={oIndex} 
-                            className={`p-2 rounded ${isCorrect ? 'bg-green-100 border-l-4 border-green-500' : 'bg-gray-50'}`}
-                          >
-                            {option} {isCorrect && '✓'}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-2 p-3 bg-blue-50 rounded text-sm">
-                      <strong>Explanation:</strong> {question.explanation}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-      
-      {/* Emergency reset button */}
-      <div className="mt-6 text-center">
-        <button 
-          onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
-          className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
-        >
-          Reset Quiz
-        </button>
+            )}
+          </>
+        )}
+        <div className="mt-6 text-center">
+          <button 
+            onClick={() => update(ref(rtdb, `groups/${groupId}/quiz`), { status: 'inactive' })}
+            className="px-3 py-2 bg-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-400 transition"
+          >
+            Reset Quiz
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
 }
