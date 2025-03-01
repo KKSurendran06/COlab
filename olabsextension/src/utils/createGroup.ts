@@ -1,43 +1,48 @@
-import { db } from "../firebase/firebase";
-import { collection, query, where, getDocs, addDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import fetchExperimentTitle from "./fetchExperimentTitle";
-import getSubjectName from "./getSubjectName";
+'use client';
 
-export const createOrJoinGroup = async (userId: string, sub: string, sim: string) => {
+import { 
+  collection, 
+  addDoc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import {auth,db} from "../firebase/firebase";
+
+// Function to create a new group
+export async function createGroup(
+  groupName: string, 
+  subject: string, 
+  experimentDetails: string
+): Promise<string | null> {
+  const user = auth.currentUser;
+  if (!user) return null;
+
   try {
-    const subjectName = await getSubjectName(sub);
-    const experimentTitle = await fetchExperimentTitle(window.location.href);
+    // Create the group document
+    const groupRef = await addDoc(collection(db, "groups"), {
+      name: groupName,
+      subject,
+      experimentDetails,
+      createdAt: serverTimestamp(),
+      createdBy: user.uid,
+      creatorName: user.displayName || user.email || 'Anonymous',
+      members: [user.uid],
+      membersCount: 1
+    });
 
-    // Check if group exists
-    const groupsRef = collection(db, "groups");
-    const q = query(groupsRef, where("experimentId", "==", sim), where("subjectId", "==", sub));
-    const querySnapshot = await getDocs(q);
+    // Add the user to the members subcollection
+    await addDoc(collection(db, `groups/${groupRef.id}/members`), {
+      uid: user.uid,
+      displayName: user.displayName || user.email || 'Anonymous',
+      email: user.email,
+      photoURL: user.photoURL || null,
+      joinedAt: serverTimestamp(),
+      role: 'admin', // Group creator is admin
+      online: true
+    });
 
-    if (!querySnapshot.empty) {
-      // Group exists, join the group
-      const groupDoc = querySnapshot.docs[0];
-      const groupRef = groupDoc.ref;
-
-      await updateDoc(groupRef, {
-        members: arrayUnion(userId),
-      });
-
-      return { success: true, message: "Joined existing group" };
-    } else {
-      // Create a new group
-      await addDoc(groupsRef, {
-        experimentId: sim,
-        subjectId: sub,
-        experimentName: experimentTitle,
-        subjectName: subjectName,
-        createdBy: userId,
-        members: [userId],
-      });
-
-      return { success: true, message: "Group created successfully" };
-    }
+    return groupRef.id;
   } catch (error) {
-    console.error("Error creating/joining group:", error);
-    return { success: false, message: "Failed to create/join group" };
+    console.error("Error creating group:", error);
+    throw error; // Rethrow for handling in the component
   }
-};
+}
