@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { getUserGroups } from '../utils/groups';
 
-export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = false, asCards = false }) {
+export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = false, asCards = false ,maxGroups}) {
   const [userGroups, setUserGroups] = useState([]);
   
   useEffect(() => {
@@ -12,7 +12,8 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
     const unsubscribe = getUserGroups(setUserGroups);
     return () => unsubscribe();
   }, []);
-  
+  const displayedGroups = maxGroups ? userGroups.slice(0, maxGroups) : userGroups;
+
   const bgColor = isDarkMode ? 'bg-[#2F3136]' : 'bg-white';
   const textColor = isDarkMode ? 'text-white' : 'text-gray-800';
   const emptyTextColor = isDarkMode ? 'text-gray-400' : 'text-gray-500';
@@ -27,11 +28,11 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
       <div className={`${bgColor} rounded-lg shadow p-2 mb-6 border`}>
         <h3 className={`text-lg font-semibold mb-3 ${textColor}`}>Your Groups</h3>
         
-        {userGroups.length === 0 ? (
+        {displayedGroups.length === 0 ? (
           <p className={`${emptyTextColor} text-sm`}>You haven't joined any groups yet</p>
         ) : (
           <ul className="space-y-2">
-            {userGroups.map(group => (
+            {displayedGroups.map(group => (
               <li 
                 key={group.id} 
                 onClick={() => onSelectGroup(group)}
@@ -61,13 +62,13 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
   // If displayed as cards (new format)
   return (
     <>
-      {userGroups.length === 0 ? (
+      {displayedGroups.length === 0 ? (
         <div className="col-span-3 text-center py-10">
           <p className={`${emptyTextColor} text-lg`}>You haven't joined any groups yet</p>
           <p className={`${emptyTextColor} text-sm mt-2`}>Create a new group to get started</p>
         </div>
       ) : (
-        userGroups.map(group => (
+        displayedGroups.map(group => (
           <div 
             key={group.id}
             onClick={() => onSelectGroup(group)}

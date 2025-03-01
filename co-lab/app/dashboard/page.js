@@ -374,6 +374,7 @@ export default function Dashboard() {
                   onSelectGroup={handleGroupSelect}
                   activeGroupId={selectedGroup?.id}
                   isDarkMode={false}
+                  maxGroups={4}
                 />
               </div>
 
