@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 
 const DashboardLayout = ({ children, activeItem = 'dashboard' }) => {
-  // Define sidebar items
   const sidebarItems = [
     {
       id: 'dashboard',
@@ -28,14 +27,11 @@ const DashboardLayout = ({ children, activeItem = 'dashboard' }) => {
 
   return (
     <div className="min-h-screen bg-[#333333] flex p-2">
-      {/* Sidebar */}
       <div className="fixed h-screen w-16 flex flex-col">
-        {/* App logo */}
         <div className="flex items-center justify-center h-16">
           <Link href="/dashboard" className="text-[#ff5722] font-bold text-xl">C</Link>
         </div>
         
-        {/* Nav Items */}
         <div className="flex flex-col items-center py-4 space-y-4 flex-1">
           {sidebarItems.map((item) => (
             <Link
@@ -53,7 +49,6 @@ const DashboardLayout = ({ children, activeItem = 'dashboard' }) => {
           ))}
         </div>
         
-        {/* User profile at bottom */}
         <div className="p-4 flex justify-center mb-4">
           <div className="w-10 h-10 rounded-full bg-[#ff5722] text-white flex items-center justify-center font-semibold cursor-pointer">
             KV
@@ -61,7 +56,6 @@ const DashboardLayout = ({ children, activeItem = 'dashboard' }) => {
         </div>
       </div>
       
-      {/* Main content area - positioned next to sidebar */}
       <div className="ml-16 flex-1 p-4">
         {children}
       </div>

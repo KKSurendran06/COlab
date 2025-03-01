@@ -41,7 +41,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
   const screenTrackRef = useRef(null);
   const [connectionStatus, setConnectionStatus] = useState("Initializing");
 
-  // STUN servers for WebRTC connection
   const configuration = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
@@ -52,11 +51,9 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     ],
   };
 
-  // Firebase references
   const roomRef = ref(rtdb, `calls/${roomId}`);
   const participantsRef = ref(rtdb, `calls/${roomId}/participants`);
 
-  // Debug function to check connections periodically
   const debugConnections = () => {
     Object.entries(peerConnectionsRef.current).forEach(([id, pc]) => {
       console.log(`Connection to ${id}:`, {
@@ -68,12 +65,10 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     });
   };
 
-  // Initialize the call
   useEffect(() => {
     console.log("Initializing video call for room:", roomId);
     setConnectionStatus("Initializing");
     
-    // Get local media stream
     const setupLocalMedia = async () => {
       try {
         console.log("Requesting user media...");
@@ -92,7 +87,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           localVideoRef.current.srcObject = stream;
         }
         
-        // Register as a participant
         if (user) {
           console.log("Registering as participant:", user.uid);
           set(ref(rtdb, `calls/${roomId}/participants/${user.uid}`), {
@@ -110,10 +104,8 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     
     setupLocalMedia();
     
-    // Setup debug interval
     const debugInterval = setInterval(debugConnections, 5000);
     
-    // Cleanup function
     return () => {
       console.log("Cleaning up video call...");
       clearInterval(debugInterval);
@@ -125,26 +117,22 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         });
       }
       
-      // Remove participant entry
       if (user) {
         remove(ref(rtdb, `calls/${roomId}/participants/${user.uid}`));
       }
     };
   }, [roomId, user]);
 
-  // Listen for participants
   useEffect(() => {
     if (!user || !localStream) return;
     
     console.log("Setting up participant listeners...");
     setConnectionStatus("Setting up participant listeners");
     
-    // Listen for new participants
     const handleNewParticipant = (snapshot) => {
       const participantId = snapshot.key;
       const participantData = snapshot.val();
       
-      // Skip ourselves
       if (participantId === user.uid) return;
       
       console.log(`New participant joined: ${participantId}`, participantData);
@@ -154,12 +142,10 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         [participantId]: participantData
       }));
       
-      // Create WebRTC connection to this participant
       createPeerConnection(participantId, true);
       setConnectionStatus("New participant joined");
     };
     
-    // Listen for participants leaving
     const handleParticipantLeft = (snapshot) => {
       const participantId = snapshot.key;
       
@@ -167,13 +153,11 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       
       console.log(`Participant left: ${participantId}`);
       
-      // Cleanup connection
       if (peerConnectionsRef.current[participantId]) {
         peerConnectionsRef.current[participantId].close();
         delete peerConnectionsRef.current[participantId];
       }
       
-      // Update states
       setRemoteStreams(prev => {
         const newStreams = {...prev};
         delete newStreams[participantId];
@@ -189,7 +173,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       setConnectionStatus("Participant left");
     };
     
-    // Get existing participants
     get(participantsRef).then((snapshot) => {
       if (snapshot.exists()) {
         const participantsData = snapshot.val();
@@ -202,7 +185,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
               [id]: data
             }));
             
-            // Create connection to existing participant
             createPeerConnection(id, true);
           }
         });
@@ -216,7 +198,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       setConnectionStatus("Error getting participants");
     });
     
-    // Set up listeners
     const newParticipantListener = onChildAdded(participantsRef, handleNewParticipant);
     const participantLeftListener = onChildRemoved(participantsRef, handleParticipantLeft);
     
@@ -226,26 +207,22 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     };
   }, [roomId, user, localStream]);
   
-  // WebRTC Signaling
   useEffect(() => {
     if (!user || !localStream) return;
     
     console.log("Setting up WebRTC signaling listeners...");
     setConnectionStatus("Setting up WebRTC signaling");
     
-    // Listen for offers
     const handleOffer = (snapshot) => {
       const data = snapshot.val();
       
       console.log("Received potential offer data:", data);
       
-      // Check if this offer is for us
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received offer from ${data.sender}:`, data);
       setConnectionStatus(`Received offer from ${data.sender}`);
       
-      // Enhanced validation
       if (!data.offer) {
         console.error("Offer is missing in the data:", data);
         setConnectionStatus("Invalid offer received");
@@ -258,10 +235,8 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         return;
       }
       
-      // Create or get peer connection
       const pc = createPeerConnection(data.sender, false);
       
-      // Set remote description with validation
       pc.setRemoteDescription(new RTCSessionDescription(data.offer))
         .then(() => {
           console.log(`Creating answer for ${data.sender}`);
@@ -276,10 +251,8 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           console.log(`Sending answer to ${data.sender}`);
           setConnectionStatus(`Sending answer to ${data.sender}`);
           
-          // Make sure the answer is properly serialized
           const answerData = JSON.parse(JSON.stringify(pc.localDescription));
           
-          // Send answer
           const answerRef = push(ref(rtdb, `calls/${roomId}/answers`));
           set(answerRef, {
             sender: user.uid,
@@ -293,19 +266,16 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         });
     };
     
-    // Listen for answers
     const handleAnswer = (snapshot) => {
       const data = snapshot.val();
       
       console.log("Received potential answer data:", data);
       
-      // Check if this answer is for us and validate
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received answer from ${data.sender}:`, data);
       setConnectionStatus(`Received answer from ${data.sender}`);
       
-      // Enhanced validation
       if (!data.answer) {
         console.error("Answer is missing in the data:", data);
         setConnectionStatus("Invalid answer received");
@@ -336,13 +306,11 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         });
     };
     
-    // Listen for ICE candidates - IMPROVED HANDLING
     const handleCandidate = (snapshot) => {
       const data = snapshot.val();
       
       console.log("Received potential ICE candidate:", data);
       
-      // Check if this candidate is for us
       if (!data || data.target !== user.uid) return;
       
       console.log(`Received ICE candidate from ${data.sender}:`, data);
@@ -353,16 +321,13 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         return;
       }
       
-      // Skip if connection is closed
       if (pc.signalingState === "closed") {
         console.warn("Cannot add ICE candidate, connection is closed");
         return;
       }
       
       try {
-        // Check different possible structures for the candidate
         if (data.candidate && typeof data.candidate === 'object') {
-          // Standard structure
           pc.addIceCandidate(new RTCIceCandidate(data.candidate))
             .then(() => {
               console.log(`Added ICE candidate from ${data.sender}`);
@@ -371,7 +336,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
               console.error("Error adding ICE candidate:", error);
             });
         } else if (data.candidate && typeof data.candidate === 'string') {
-          // Sometimes candidates are serialized as strings
           const candidateObj = JSON.parse(data.candidate);
           pc.addIceCandidate(new RTCIceCandidate(candidateObj))
             .then(() => {
@@ -381,7 +345,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
               console.error("Error adding parsed ICE candidate:", error);
             });
         } else if (data.sdpMid || data.sdpMLineIndex || data.candidate) {
-          // Some systems put the candidate properties at the root level
           pc.addIceCandidate(new RTCIceCandidate({
             sdpMid: data.sdpMid,
             sdpMLineIndex: data.sdpMLineIndex,
@@ -401,7 +364,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       }
     };
     
-    // Set up listeners
     const offersRef = ref(rtdb, `calls/${roomId}/offers`);
     const answersRef = ref(rtdb, `calls/${roomId}/answers`);
     const candidatesRef = ref(rtdb, `calls/${roomId}/candidates`);
@@ -417,35 +379,28 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     };
   }, [roomId, user, localStream]);
   
-  // Helper to create a peer connection
   const createPeerConnection = (participantId, isInitiator) => {
     console.log(`Creating ${isInitiator ? 'initiator' : 'receiver'} peer connection to ${participantId}`);
     
-    // Don't create duplicate connections
     if (peerConnectionsRef.current[participantId]) {
       return peerConnectionsRef.current[participantId];
     }
     
-    // Create new connection
     const pc = new RTCPeerConnection(configuration);
     peerConnectionsRef.current[participantId] = pc;
     
-    // Add local tracks
     localStream.getTracks().forEach(track => {
       console.log(`Adding ${track.kind} track to connection with ${participantId}`);
       pc.addTrack(track, localStream);
     });
     
-    // Handle ICE candidates - IMPROVED
     pc.onicecandidate = (event) => {
       if (!event.candidate) return;
       
       console.log(`Generated ICE candidate for ${participantId}:`, event.candidate);
       
-      // Ensure the candidate is serializable
       const candidateJson = JSON.parse(JSON.stringify(event.candidate));
       
-      // Send candidate to peer
       const candidateRef = push(ref(rtdb, `calls/${roomId}/candidates`));
       set(candidateRef, {
         sender: user.uid,
@@ -456,7 +411,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       });
     };
     
-    // Handle connection state changes
     pc.onconnectionstatechange = () => {
       console.log(`Connection state with ${participantId} changed to: ${pc.connectionState}`);
       setConnectionStatus(`Connection state: ${pc.connectionState}`);
@@ -471,7 +425,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         pc.close();
         delete peerConnectionsRef.current[participantId];
         
-        // Update UI
         setRemoteStreams(prev => {
           const newStreams = {...prev};
           delete newStreams[participantId];
@@ -480,7 +433,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       }
     };
     
-    // Handle ICE connection state changes
     pc.oniceconnectionstatechange = () => {
       console.log(`ICE connection state with ${participantId} changed to: ${pc.iceConnectionState}`);
       
@@ -490,37 +442,30 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       } else if (pc.iceConnectionState === 'failed') {
         console.log(`ICE connection to ${participantId} failed, attempting restart`);
         setConnectionStatus(`ICE failed with ${participantId}, restarting`);
-        // Attempt to restart ICE
         pc.restartIce();
       }
     };
     
-    // Add ICE connection state logging
     pc.onicegatheringstatechange = () => {
       console.log(`ICE gathering state for ${participantId} changed to: ${pc.iceGatheringState}`);
     };
     
-    // Handle remote streams
     pc.ontrack = (event) => {
       console.log(`Received track from ${participantId}:`, event.track.kind);
       setConnectionStatus(`Received ${event.track.kind} from ${participantId}`);
       
-      // Store the remote stream
       setRemoteStreams(prev => ({
         ...prev,
         [participantId]: event.streams[0]
       }));
     };
     
-    // Create and send an offer if we're the initiator
     if (isInitiator) {
       console.log(`Creating offer for ${participantId}`);
       setConnectionStatus(`Creating offer for ${participantId}`);
       
-      // Fix: Wait for all ICE candidates before sending offer
       let iceCandidatesComplete = false;
       
-      // Track when ICE gathering is complete
       const originalIceGatheringHandler = pc.onicegatheringstatechange;
       pc.onicegatheringstatechange = () => {
         originalIceGatheringHandler();
@@ -539,7 +484,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           return pc.setLocalDescription(offer);
         })
         .then(() => {
-          // Wait for ICE gathering to complete or timeout after 5 seconds
           const waitForIceCandidates = new Promise((resolve) => {
             const checkState = () => {
               if (iceCandidatesComplete) {
@@ -550,13 +494,10 @@ export default function VideoCall({ roomId, onLeaveCall }) {
               }
             };
             
-            // Check immediately
             checkState();
             
-            // Also set up an interval to check
             const interval = setInterval(checkState, 500);
             
-            // And set a timeout to ensure we don't wait forever
             setTimeout(() => {
               clearInterval(interval);
               resolve();
@@ -566,14 +507,12 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           return waitForIceCandidates;
         })
         .then(() => {
-          // Make sure local description is set and valid before sending
           if (pc.localDescription && pc.localDescription.type && pc.localDescription.sdp) {
             console.log(`Sending offer to ${participantId}`);
             setConnectionStatus(`Sending offer to ${participantId}`);
             
             const offerRef = push(ref(rtdb, `calls/${roomId}/offers`));
             
-            // Create a deep copy of the offer to ensure it's fully serialized
             const offerData = JSON.parse(JSON.stringify(pc.localDescription));
             
             set(offerRef, {
@@ -598,7 +537,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
     return pc;
   };
 
-  // UI Controls
   const toggleMute = () => {
     console.log(`Toggling audio: ${isMuted ? 'unmuting' : 'muting'}`);
     
@@ -633,7 +571,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
         const cameraTrack = cameraStream.getVideoTracks()[0];
 
-        // Replace track in all peer connections
         Object.values(peerConnectionsRef.current).forEach((pc) => {
           const senders = pc.getSenders();
           const sender = senders.find(s => s.track && s.track.kind === "video");
@@ -643,7 +580,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           }
         });
 
-        // Replace in local preview
         const oldVideoTracks = localStream.getVideoTracks();
         if (oldVideoTracks.length > 0) {
           localStream.removeTrack(oldVideoTracks[0]);
@@ -670,7 +606,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
         const screenTrack = screenStream.getVideoTracks()[0];
         screenTrackRef.current = screenTrack;
 
-        // Replace track in all peer connections
         Object.values(peerConnectionsRef.current).forEach((pc) => {
           const senders = pc.getSenders();
           const sender = senders.find(s => s.track && s.track.kind === "video");
@@ -680,7 +615,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
           }
         });
 
-        // Replace in local preview
         const oldVideoTracks = localStream.getVideoTracks();
         if (oldVideoTracks.length > 0) {
           localStream.removeTrack(oldVideoTracks[0]);
@@ -693,10 +627,9 @@ export default function VideoCall({ roomId, onLeaveCall }) {
 
         setIsScreenSharing(true);
 
-        // Handle when user stops sharing via browser UI
         screenTrack.onended = () => {
           console.log("Screen sharing stopped via browser UI");
-          shareScreen(); // Will toggle back to camera
+          shareScreen(); 
         };
       } catch (error) {
         console.error("Error sharing screen:", error);
@@ -708,13 +641,11 @@ export default function VideoCall({ roomId, onLeaveCall }) {
   const leaveCall = () => {
     console.log("Leaving call");
     
-    // Close all peer connections
     Object.values(peerConnectionsRef.current).forEach(pc => {
       console.log("Closing peer connection");
       pc.close();
     });
     
-    // Stop all local tracks
     if (localStream) {
       localStream.getTracks().forEach(track => {
         console.log(`Stopping track: ${track.kind}`);
@@ -722,32 +653,25 @@ export default function VideoCall({ roomId, onLeaveCall }) {
       });
     }
     
-    // Remove from participants
     if (user) {
       remove(ref(rtdb, `calls/${roomId}/participants/${user.uid}`));
     }
     
-    // Notify parent component
     onLeaveCall();
   };
 
-  // Manual connection retry
   const retryConnections = () => {
     console.log("Manually retrying connections");
     setConnectionStatus("Manually retrying connections");
     
-    // Close existing connections
     Object.entries(peerConnectionsRef.current).forEach(([id, pc]) => {
       pc.close();
     });
     
-    // Reset connections
     peerConnectionsRef.current = {};
     
-    // Reset remote streams
     setRemoteStreams({});
     
-    // Reestablish connections with all participants
     Object.keys(participants).forEach(id => {
       createPeerConnection(id, true);
     });
@@ -787,7 +711,6 @@ export default function VideoCall({ roomId, onLeaveCall }) {
             </div>
           ))}
           
-          {/* Show placeholder if no remote streams */}
           {Object.keys(remoteStreams).length === 0 && (
             <div className="flex items-center justify-center h-32 bg-gray-800 rounded-xl p-2">
               <p className="text-gray-400">Waiting for others to join...</p>

@@ -12,7 +12,6 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-// Send a message to a group
 export async function sendMessage(groupId, text) {
   const user = auth.currentUser;
   if (!user) return false;
@@ -34,7 +33,6 @@ export async function sendMessage(groupId, text) {
   }
 }
 
-// Listen to messages in a group
 export function listenToMessages(groupId, callback, messagesLimit = 50) {
   if (!groupId) {
     callback([]);
@@ -58,7 +56,6 @@ export function listenToMessages(groupId, callback, messagesLimit = 50) {
   });
 }
 
-// Function to get group members
 export function getGroupMembers(groupId, callback) {
   if (!groupId) {
     callback([]);
@@ -75,7 +72,6 @@ export function getGroupMembers(groupId, callback) {
       id: doc.id,
       ...doc.data(),
       joinedAt: doc.data().joinedAt?.toDate(),
-      // Ensure there's always a displayName
       displayName: doc.data().displayName || doc.data().email || 'Anonymous'
     }));
 

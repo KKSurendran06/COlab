@@ -1,4 +1,4 @@
-// app/components/FontWrapper.js
+
 'use client';
 
 import { useFont } from '../context/FontContext';

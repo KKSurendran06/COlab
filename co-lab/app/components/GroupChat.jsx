@@ -1,4 +1,4 @@
-// app/components/GroupChat.jsx
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -18,7 +18,6 @@ export default function GroupChat({ group }) {
     
     setLoading(true);
     
-    // Set up listeners for messages and members
     const unsubscribeMessages = listenToMessages(group.id, (msgs) => {
       setMessages(msgs);
       setLoading(false);
@@ -26,14 +25,12 @@ export default function GroupChat({ group }) {
     
     const unsubscribeMembers = getGroupMembers(group.id, setMembers);
     
-    // Clean up listeners on component unmount or group change
     return () => {
       unsubscribeMessages();
       unsubscribeMembers();
     };
   }, [group?.id]);
   
-  // Scroll to bottom whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -46,10 +43,8 @@ export default function GroupChat({ group }) {
     setNewMessage('');
   };
   
-  // Simulate typing indicator
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
-    // This would normally connect to a real-time typing indicator system
     if (e.target.value && !isTyping) {
       setIsTyping(true);
       setTimeout(() => setIsTyping(false), 3000);
@@ -80,7 +75,6 @@ export default function GroupChat({ group }) {
   
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Group header */}
       <div className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <div>
           <div className="flex items-center">
@@ -105,9 +99,7 @@ export default function GroupChat({ group }) {
         </div>
       </div>
       
-      {/* Chat area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Messages */}
         <div className="flex-1 p-6 overflow-y-auto bg-gray-50 bg-opacity-70">
           {loading ? (
             <div className="flex justify-center items-center h-full">
@@ -184,7 +176,6 @@ export default function GroupChat({ group }) {
                 );
               })}
               
-              {/* Typing indicator */}
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="max-w-xs md:max-w-md lg:max-w-lg">
@@ -213,7 +204,6 @@ export default function GroupChat({ group }) {
           )}
         </div>
         
-        {/* Online members sidebar */}
         <div className="w-64 bg-white border-l border-gray-200 p-4 hidden md:block">
           <h3 className="font-medium text-gray-700 mb-3 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-green-500" viewBox="0 0 20 20" fill="currentColor">
@@ -255,7 +245,6 @@ export default function GroupChat({ group }) {
         </div>
       </div>
       
-      {/* Message input */}
       <div className="bg-white border-t border-gray-200 p-4">
         <form onSubmit={handleSendMessage} className="flex items-center">
           <div className="flex-1 relative">

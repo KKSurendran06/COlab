@@ -10,32 +10,27 @@ export default function Whiteboard({ groupId }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(5);
-  const [tool, setTool] = useState('pen'); // pen, eraser
+  const [tool, setTool] = useState('pen'); 
   const [currentPath, setCurrentPath] = useState([]);
   const [allPaths, setAllPaths] = useState([]);
   const { user } = useAuth();
   
-  // Setup Firebase reference for the whiteboard data
   const whiteboardRef = ref(rtdb, `whiteboards/${groupId}`);
   const userPathsRef = ref(rtdb, `whiteboards/${groupId}/paths`);
   const userCursorsRef = ref(rtdb, `whiteboards/${groupId}/cursors`);
   
-  // Initialize canvas and listeners
   useEffect(() => {
     if (!canvasRef.current || !groupId) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
-    // Set canvas dimensions
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     
-    // Clear canvas
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Handle window resize
     const handleResize = () => {
       const prevImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
       canvas.width = canvas.offsetWidth;
@@ -52,7 +47,6 @@ export default function Whiteboard({ groupId }) {
     };
   }, [canvasRef, groupId]);
   
-  // Subscribe to Firebase paths updates
   useEffect(() => {
     if (!groupId) return;
     
@@ -63,7 +57,6 @@ export default function Whiteboard({ groupId }) {
       const paths = Object.values(data);
       setAllPaths(paths);
       
-      // Redraw all paths
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         ctx.fillStyle = 'white';
@@ -91,7 +84,6 @@ export default function Whiteboard({ groupId }) {
     return () => unsubscribe();
   }, [groupId, userPathsRef]);
   
-  // Track user cursor positions
   useEffect(() => {
     if (!groupId || !user) return;
     
@@ -118,7 +110,6 @@ export default function Whiteboard({ groupId }) {
       canvasRef.current.addEventListener('mousemove', handleMouseMove);
     }
     
-    // Remove cursor data when component unmounts
     return () => {
       if (canvasRef.current) {
         canvasRef.current.removeEventListener('mousemove', handleMouseMove);
@@ -127,7 +118,6 @@ export default function Whiteboard({ groupId }) {
     };
   }, [groupId, user, color]);
   
-  // Display other users' cursors
   useEffect(() => {
     if (!groupId) return;
     
@@ -142,18 +132,15 @@ export default function Whiteboard({ groupId }) {
           ...cursor
         }));
       
-      // Redraw cursors as little triangles with user names
       const drawCursors = () => {
         if (!canvasRef.current) return;
         
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         
-        // Clear and redraw the whiteboard
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Redraw all paths
         allPaths.forEach(path => {
           if (path.points.length < 2) return;
           
@@ -171,12 +158,9 @@ export default function Whiteboard({ groupId }) {
           ctx.stroke();
         });
         
-        // Draw cursors
         cursors.forEach(cursor => {
-          // Check if cursor data is recent (last 10 seconds)
           if (Date.now() - cursor.lastUpdated > 10000) return;
           
-          // Draw cursor
           ctx.beginPath();
           ctx.moveTo(cursor.x, cursor.y);
           ctx.lineTo(cursor.x - 6, cursor.y + 15);
@@ -185,7 +169,6 @@ export default function Whiteboard({ groupId }) {
           ctx.fillStyle = cursor.color || '#000000';
           ctx.fill();
           
-          // Draw name
           ctx.font = '12px Arial';
           ctx.fillText(cursor.displayName || 'User', cursor.x + 10, cursor.y + 15);
         });
@@ -193,7 +176,6 @@ export default function Whiteboard({ groupId }) {
       
       drawCursors();
       
-      // Set up animation frame for cursor updates
       const animate = () => {
         drawCursors();
         requestAnimationFrame(animate);
@@ -207,7 +189,6 @@ export default function Whiteboard({ groupId }) {
     return () => unsubscribe();
   }, [groupId, user, userCursorsRef, allPaths]);
   
-  // Drawing handlers
   const startDrawing = (e) => {
     if (!canvasRef.current) return;
     
@@ -219,7 +200,6 @@ export default function Whiteboard({ groupId }) {
     setIsDrawing(true);
     setCurrentPath([{ x, y }]);
     
-    // Start a new path
     const ctx = canvas.getContext('2d');
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -249,7 +229,6 @@ export default function Whiteboard({ groupId }) {
     
     setIsDrawing(false);
     
-    // Save the path to Firebase
     if (currentPath.length > 0 && groupId) {
       const newPathRef = push(userPathsRef);
       set(newPathRef, {
@@ -266,17 +245,14 @@ export default function Whiteboard({ groupId }) {
     setCurrentPath([]);
   };
   
-  // Toolbar actions
   const clearWhiteboard = () => {
     if (!canvasRef.current || !groupId) return;
     
-    // Clear canvas
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Clear paths from Firebase
     set(userPathsRef, null);
   };
   

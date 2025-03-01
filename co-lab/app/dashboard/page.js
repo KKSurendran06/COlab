@@ -23,12 +23,12 @@ export default function Dashboard() {
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("chat"); // chat, whiteboard, video, notes
+  const [activeTab, setActiveTab] = useState("chat"); 
   const [searchQuery, setSearchQuery] = useState("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [userGroups, setUserGroups] = useState([]);
-  const [showFontSettings, setShowFontSettings] = useState(false); // Added state for font settings
+  const [showFontSettings, setShowFontSettings] = useState(false); 
   const {
     fontSize,
     fontFamily,
@@ -46,20 +46,16 @@ export default function Dashboard() {
       return;
     }
 
-    // Set up presence tracking when user logs in
     const cleanupPresence = setupPresence();
 
-    // Fetch all available groups
     const unsubscribe = getAvailableGroups(setUserGroups);
 
     return () => {
-      // Clean up presence tracking when component unmounts or user logs out
       if (cleanupPresence) cleanupPresence();
       unsubscribe();
     };
   }, [user, router]);
 
-  // Handle clicks outside of profile dropdown to close it
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -84,7 +80,7 @@ export default function Dashboard() {
 
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
-    setActiveTab("chat"); // Reset to chat view when selecting a new group
+    setActiveTab("chat"); 
   };
 
   const handleCreateGroup = () => {
@@ -104,7 +100,6 @@ export default function Dashboard() {
     return <div>Loading...</div>;
   }
 
-  // Get initials for avatar
   const getInitials = (email) => {
     if (!email) return "";
     const parts = email.split("@")[0].split(/[._-]/);
@@ -117,7 +112,6 @@ export default function Dashboard() {
   return (
     <DashboardLayout activeItem="dashboard">
       <div className="bg-white rounded-xl shadow-sm h-full p-10">
-        {/* Navigation */}
         <nav className="bg-white rounded-xl z-10 mb-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
@@ -129,7 +123,6 @@ export default function Dashboard() {
               </div>
 
               <div className="flex items-center space-x-4">
-                {/* Notification Bell */}
                 <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -147,7 +140,6 @@ export default function Dashboard() {
                   </svg>
                 </button>
 
-                {/* Profile dropdown */}
                 <div className="relative" ref={profileRef}>
                   <div
                     onClick={toggleProfile}
@@ -158,7 +150,6 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Profile Dropdown */}
                   {isProfileOpen && (
                     <div className="absolute right-0 top-10 w-64 bg-white rounded-xl shadow-lg py-1 z-20 border border-gray-100">
                       <div className="px-4 py-3 border-b border-gray-100">
@@ -209,7 +200,6 @@ export default function Dashboard() {
                           </svg>
                           Points: {userPoints}
                         </a>
-                        {/* New Font Settings Option */}
                         <button
                           onClick={() => setShowFontSettings(!showFontSettings)}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
@@ -268,11 +258,9 @@ export default function Dashboard() {
           </div>
         </nav>
 
-        {/* Main content */}
         <div className="overflow-hidden">
           {selectedGroup ? (
             <>
-              {/* Tabs */}
               <div className="bg-white shadow-sm px-4 flex border border-gray-100 items-center rounded-xl mb-6">
                 <button
                   onClick={() => setSelectedGroup(null)}
@@ -346,7 +334,6 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Content area */}
               <div className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm">
                 {activeTab === "chat" && <GroupChat group={selectedGroup} />}
                 {activeTab === "whiteboard" && (
@@ -368,7 +355,6 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* We'll use the GroupList component's data but style it as cards */}
                 <UserGroups
                   asCards={true}
                   onSelectGroup={handleGroupSelect}
@@ -378,9 +364,7 @@ export default function Dashboard() {
                 />
               </div>
 
-              {/* My next lessons and Recommended group in same line */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                {/* My next lessons section - takes up 2/3 */}
                 <div className="bg-white rounded-3xl shadow-sm overflow-hidden md:col-span-2 border-2 border-black">
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
@@ -439,7 +423,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Recommended group - takes up 1/3 */}
                 <div className="bg-[#333333] text-white rounded-xl shadow-sm overflow-hidden border border-[#444444]">
                   <div className="p-6">
                     <h2 className="text-lg font-semibold mb-2">
@@ -459,7 +442,6 @@ export default function Dashboard() {
 
                           <div className="mt-3">
                             <div className="flex -space-x-2 overflow-hidden mb-2">
-                              {/* Show a few avatars */}
                               <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-blue-500 flex items-center justify-center">
                                 {getInitials(
                                   userGroups[0]?.creatorName || "User"
@@ -514,14 +496,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Create Group Modal */}
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onGroupCreated={handleGroupCreated}
       />
 
-      {/* Font Settings Modal */}
       {showFontSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
@@ -549,7 +529,6 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4 mb-6">
-              {/* Font Size Control */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Font Size
@@ -598,7 +577,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Text Spacing */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Text Spacing
@@ -659,7 +637,6 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              {/* Font Style Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Font Style
@@ -677,7 +654,6 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              {/* High Contrast Toggle */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">
                   High Contrast Mode

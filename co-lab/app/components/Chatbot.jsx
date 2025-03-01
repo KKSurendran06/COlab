@@ -10,14 +10,13 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [micInputUsed, setMicInputUsed] = useState(false);  // Track if the current input came from mic
+  const [micInputUsed, setMicInputUsed] = useState(false);  
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const speechSynthesisRef = useRef(null);
 
-  // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -29,13 +28,11 @@ export default function Chatbot() {
     }
   }, [messages, isOpen]);
 
-  // Speech synthesis setup
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       speechSynthesisRef.current = window.speechSynthesis;
     }
     
-    // Cleanup on unmount
     return () => {
       if (isPlaying && speechSynthesisRef.current) {
         speechSynthesisRef.current.cancel();
@@ -50,7 +47,7 @@ export default function Chatbot() {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      setMicInputUsed(false);  // Reset mic input flag for keyboard input
+      setMicInputUsed(false); 
       sendMessage();
     }
   };
@@ -77,20 +74,14 @@ export default function Chatbot() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
         try {
-          // Here we'd normally send this to a speech-to-text service
-          // For this demo, we'll simulate getting text from the audio
-          // In a real implementation, you would use a service like Google's Speech-to-Text API
           
-          setInput("I'm speaking through the microphone");  // Placeholder text
-          setMicInputUsed(true);  // Set flag to indicate mic input was used
+          
+          setInput("I'm speaking through the microphone"); 
+          setMicInputUsed(true); 
           setIsRecording(false);
           
-          // Close all audio tracks to release the microphone
           stream.getTracks().forEach(track => track.stop());
           
-          // In a real implementation, you'd do something like:
-          // const text = await sendAudioForTranscription(audioBlob);
-          // setInput(text);
         } catch (error) {
           console.error("Error processing speech:", error);
           setIsRecording(false);
@@ -113,7 +104,6 @@ export default function Chatbot() {
 
   const speakText = (text) => {
     if (speechSynthesisRef.current) {
-      // Cancel any ongoing speech
       speechSynthesisRef.current.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
@@ -141,10 +131,8 @@ export default function Chatbot() {
     setInput("");
     setIsLoading(true);
     
-    // Store the current mic input state before sending
     const wasMicInput = micInputUsed;
     
-    // Reset the mic input flag for the next message
     if (micInputUsed) {
       setMicInputUsed(false);
     }
@@ -164,7 +152,6 @@ export default function Chatbot() {
       const data = await response.json();
       let reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process your request at this time.";
       
-      // Replace words
       reply = reply.replace(/Google/gi, "Tech Codianzz").replace(/Gemini/gi, "Colabo");
 
       setTimeout(() => {
@@ -172,11 +159,10 @@ export default function Chatbot() {
         setMessages([...newMessages, botMessage]);
         setIsLoading(false);
         
-        // Auto-speak bot responses if input came from microphone
         if (wasMicInput) {
           speakText(reply);
         }
-      }, 300); // Small delay for natural feeling
+      }, 300); 
     } catch (error) {
       console.error("Error fetching AI response:", error);
       setMessages([
@@ -191,7 +177,7 @@ export default function Chatbot() {
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
       {isOpen && (
         <div className="w-96 bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out transform">
-          {/* Header */}
+    
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-3 flex justify-between items-center">
             <div className="flex items-center">
               <MessageCircle size={20} className="text-white mr-2" />
@@ -208,7 +194,6 @@ export default function Chatbot() {
             </div>
           </div>
 
-          {/* Messages container */}
           <div className="h-80 overflow-y-auto px-4 py-3 bg-gray-50">
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 mt-12 px-6">
@@ -256,7 +241,6 @@ export default function Chatbot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input area */}
           <div className="px-4 py-3 bg-white border-t border-gray-200">
             <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all">
               <input
@@ -267,7 +251,7 @@ export default function Chatbot() {
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  setMicInputUsed(false); // Reset mic flag on manual typing
+                  setMicInputUsed(false); 
                 }}
                 onKeyDown={handleKeyDown}
               />

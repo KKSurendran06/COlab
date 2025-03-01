@@ -2,16 +2,11 @@ import { db } from "./firebase/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { getData, storeData } from "./utils/storage";
 
-// Track experiment page visits
 chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
-  // Using underscore (_) to indicate we're intentionally not using the tabId parameter
-  
-  // Only proceed if the page has completed loading
   if (changeInfo.status === 'complete' && tab.url) {
     const details = await getData("experimentDetails");
     if (details) {
       try {
-        // Log the experiment visit to Firebase
         await addDoc(collection(db, "experiments"), {
           sub: details.sub,
           sim: details.sim,
@@ -28,14 +23,11 @@ chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
   }
 });
 
-// Listen for messages from the popup or content scripts
 chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
-  // Using underscore (_) to indicate we're intentionally not using the sender parameter
   
   if (request.action === "fetchExperimentTitle") {
     fetchTitle(request.url)
       .then(title => {
-        // Store the title in local storage for future use
         storeData("experimentTitle", title);
         sendResponse({ success: true, title });
       })
@@ -44,7 +36,6 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
         sendResponse({ success: false, error: error.toString() });
       });
     
-    // Return true to indicate that we'll send a response asynchronously
     return true;
   }
 });
@@ -55,13 +46,11 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
  * @returns Promise resolving to the title string
  */
 async function fetchTitle(url: string): Promise<string> {
-  // First try to get the title from the current tab if it's the same URL
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     
     if (currentTab && currentTab.url === url && currentTab.id) {
-      // If we're on the page, execute script to get title directly
       const results = await chrome.scripting.executeScript({
         target: { tabId: currentTab.id },
         func: () => {
@@ -75,7 +64,6 @@ async function fetchTitle(url: string): Promise<string> {
       }
     }
     
-    // If we couldn't get the title from the current tab, try fetching it
     const response = await fetch(url, {
       method: 'GET',
       headers: {

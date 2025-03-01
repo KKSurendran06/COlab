@@ -1,4 +1,3 @@
-// app/components/UserGroups.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,6 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
   const [userGroups, setUserGroups] = useState([]);
   
   useEffect(() => {
-    // Get user's groups
     const unsubscribe = getUserGroups(setUserGroups);
     return () => unsubscribe();
   }, []);
@@ -22,7 +20,6 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
   const avatarBg = isDarkMode ? 'bg-[#7289DA]' : 'bg-blue-500';
   const countBg = isDarkMode ? 'bg-[#40444B] text-gray-300' : 'bg-gray-200 text-gray-700';
   
-  // If displayed as list (original format)
   if (!asCards) {
     return (
       <div className={`${bgColor} rounded-lg shadow p-2 mb-6 border`}>
@@ -59,7 +56,6 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
     );
   }
   
-  // If displayed as cards (new format)
   return (
     <>
       {displayedGroups.length === 0 ? (
@@ -74,15 +70,12 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
             onClick={() => onSelectGroup(group)}
             className={`bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border border-gray-200`}
           >
-            {/* Card header with category label */}
             <div className="relative">
-              {/* Background color based on subject/category */}
               <div className={`h-24 ${
                 group.category === 'Marketing' ? 'bg-yellow-200' : 
                 group.category === 'Computer Science' ? 'bg-purple-200' : 
                 group.category === 'Psychology' ? 'bg-blue-200' : 'bg-gray-200'
               }`}>
-                {/* Bookmark icon */}
                 <button className="absolute top-2 right-2 text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -90,7 +83,6 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
                 </button>
               </div>
               
-              {/* Category tag */}
               <div className="px-4 py-4">
                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
                   group.category === 'Marketing' ? 'bg-yellow-500 text-black' : 
@@ -100,12 +92,10 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
                   {group.category || 'Study Group'}
                 </span>
                 
-                {/* Group name */}
                 <h3 className="text-lg font-bold text-gray-800">{group.name}</h3>
               </div>
             </div>
             
-            {/* Progress bar */}
             <div className="px-4">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Progress</span>
@@ -123,9 +113,7 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
               </div>
             </div>
             
-            {/* Members and continue button */}
             <div className="px-4 pb-4 flex justify-between items-center">
-              {/* Member avatars */}
               <div className="flex -space-x-2 overflow-hidden">
                 {[...Array(Math.min(3, group.membersCount || 3))].map((_, i) => (
                   <div 
@@ -142,7 +130,6 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
                 )}
               </div>
               
-              {/* Continue button */}
               <button className="px-4 py-2 bg-[#ff5722] text-white rounded-md text-sm font-medium hover:bg-[#e64a19]">
                 Continue
               </button>

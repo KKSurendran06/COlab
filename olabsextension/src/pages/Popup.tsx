@@ -6,12 +6,11 @@ export default function AIExplanation() {
 
   const fetchPageContent = async () => {
     try {
-      const response = await fetch(window.location.href); // Fetch full page HTML
+      const response = await fetch(window.location.href); 
       const htmlText = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlText, "text/html");
       
-      // Extract meaningful text (removes scripts, styles, etc.)
       const extractedText = doc.body.innerText || "No readable content found.";
       
       return extractedText;
@@ -44,7 +43,6 @@ export default function AIExplanation() {
         
       setAiResponse(explanation);
 
-      // Read out the response
       const speech = new SpeechSynthesisUtterance(explanation);
       speech.lang = "en-US";
       window.speechSynthesis.speak(speech);

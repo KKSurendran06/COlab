@@ -20,7 +20,6 @@ export default function Notes({ groupId }) {
   const [selectedNote, setSelectedNote] = useState(null);
   const [editMode, setEditMode] = useState(false);
 
-  // Load notes and folders when component mounts or groupId changes
   useEffect(() => {
     if (groupId && user) {
       loadFolders();
@@ -62,7 +61,6 @@ export default function Notes({ groupId }) {
           orderBy('createdAt', 'desc')
         );
       } else {
-        // Filter by time period if no folder is selected
         if (activeTab === 'today') {
           q = query(
             collection(db, 'notes'),
@@ -213,7 +211,6 @@ export default function Notes({ groupId }) {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
       <div className="p-6 bg-white shadow-sm">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Group Notes</h1>
@@ -245,7 +242,6 @@ export default function Notes({ groupId }) {
         </div>
       </div>
       
-      {/* Recent Folders */}
       <div className="px-6 pt-6">
         <h2 className="text-lg font-bold text-gray-800 mb-3">Recent Folders</h2>
         <div className="flex space-x-2 border-b border-gray-200">
@@ -307,7 +303,6 @@ export default function Notes({ groupId }) {
         </div>
       </div>
       
-      {/* My Notes */}
       <div className="px-6 pt-6 pb-6 flex-1 overflow-y-auto">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-lg font-bold text-gray-800">
@@ -404,7 +399,6 @@ export default function Notes({ groupId }) {
         </div>
       </div>
       
-      {/* Create Note Modal */}
       {isCreateNoteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg max-w-lg w-full p-6">
@@ -480,7 +474,6 @@ export default function Notes({ groupId }) {
         </div>
       )}
       
-      {/* Create Folder Modal */}
       {isCreateFolderModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">

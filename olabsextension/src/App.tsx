@@ -20,7 +20,6 @@ function App() {
     return <Login />;
   }
 
-  // Ensure experiment is loaded before rendering Dashboard
   if (!experiment) {
     return <div className="p-6 text-center">Loading experiment details...</div>;
   }

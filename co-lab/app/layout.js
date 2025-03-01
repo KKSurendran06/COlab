@@ -17,7 +17,6 @@ const comicNeue = Comic_Neue({
   variable: "--font-comic-neue",
 });
 
-// Load OpenDyslexic locally
 const openDyslexic = localFont({
   src: [
     {

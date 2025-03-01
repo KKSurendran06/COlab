@@ -1,4 +1,4 @@
-// app/components/FontSettings.js
+
 'use client';
 
 import { useFont } from '../context/FontContext';

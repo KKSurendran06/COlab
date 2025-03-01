@@ -1,4 +1,3 @@
-// app/components/GroupList.jsx
 'use client';
 import { useState, useEffect } from 'react';
 import { getAvailableGroups, joinGroup, createGroup } from '../utils/groups';
@@ -51,7 +50,6 @@ export default function GroupList({ onSelectGroup }) {
         <p className="text-sm text-blue-100 mt-1">Join or create research collaboration groups</p>
       </div>
 
-      {/* Search and Create buttons */}
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-2">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

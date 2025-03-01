@@ -15,14 +15,12 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }) {
   const modalRef = useRef(null);
   const nameInputRef = useRef(null);
   
-  // Focus on name input when modal opens
   useEffect(() => {
     if (isOpen && nameInputRef.current) {
       setTimeout(() => nameInputRef.current.focus(), 100);
     }
   }, [isOpen]);
   
-  // Handle click outside to close
   useEffect(() => {
     function handleClickOutside(event) {
       if (modalRef.current && !modalRef.current.contains(event.target) && !loading) {
@@ -83,11 +81,9 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }) {
     setError('');
     
     try {
-      // Call the createGroup function from utils/groups.js
       const groupId = await createGroup(name.trim(), subject.trim(), experimentDetails.trim());
       
       if (groupId) {
-        // Fetch the newly created group with complete data
         const groupRef = doc(db, 'groups', groupId);
         const groupDoc = await getDoc(groupRef);
         
@@ -98,7 +94,6 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }) {
             createdAt: groupDoc.data().createdAt?.toDate()
           };
           
-          // Pass the new group data to parent component
           onGroupCreated(newGroup);
           resetForm();
           onClose();
@@ -124,7 +119,6 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }) {
         ref={modalRef}
         className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
       >
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-white">
             {step === 1 ? 'Create New Group' : 'Group Details'}
@@ -140,7 +134,6 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }) {
           </button>
         </div>
         
-        {/* Steps indicator */}
         <div className="flex items-center px-6 py-3 bg-gray-50">
           <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step === 1 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'}`}>
             1

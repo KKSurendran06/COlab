@@ -16,11 +16,9 @@ export default function Groups() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Categories for filtering
   const categories = ["All", "Computer Science", "Mathematics", "Physics", "Other"];
 
   useEffect(() => {
-    // Fetch all available groups
     const unsubscribe = getAvailableGroups((fetchedGroups) => {
       setGroups(fetchedGroups);
       setFilteredGroups(fetchedGroups);
@@ -30,11 +28,9 @@ export default function Groups() {
     return () => unsubscribe();
   }, []);
 
-  // Filter groups based on search query and selected category
   useEffect(() => {
     let result = groups;
     
-    // Filter by search query
     if (searchQuery) {
       result = result.filter(group => 
         group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,7 +39,6 @@ export default function Groups() {
       );
     }
     
-    // Filter by category
     if (selectedCategory !== "All") {
       result = result.filter(group => group.category === selectedCategory);
     }
@@ -61,8 +56,6 @@ export default function Groups() {
   };
 
   const handleJoinGroup = (group) => {
-    // Here you would implement the logic to join a group
-    // For now, we'll just navigate to the dashboard with the group selected
     router.push(`/dashboard?group=${group.id}`);
   };
 
@@ -73,7 +66,6 @@ export default function Groups() {
   return (
     <DashboardLayout activeItem="courses">
       <div className="rounded-xl shadow-sm flex h-full">
-        {/* Main content area (75%) */}
         <div className="w-3/4 pr-4">
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             <div className="flex justify-between items-center mb-6">
@@ -100,7 +92,6 @@ export default function Groups() {
               </button>
             </div>
 
-            {/* Search and filters */}
             <div className="flex flex-col sm:flex-row justify-between mb-6 space-y-4 sm:space-y-0">
               <div className="relative w-full sm:w-64">
                 <input
@@ -117,7 +108,6 @@ export default function Groups() {
                 </div>
               </div>
 
-              {/* Category filters */}
               <div className="flex flex-wrap gap-2">
                 {categories.map(category => (
                   <button
@@ -135,7 +125,6 @@ export default function Groups() {
               </div>
             </div>
 
-            {/* Groups grid */}
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#ff5722]"></div>
@@ -161,15 +150,12 @@ export default function Groups() {
                     key={group.id}
                     className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
                   >
-                    {/* Card header with category label */}
                     <div className="relative">
-                      {/* Background color based on subject/category */}
                       <div className={`h-24 ${
                         group.category === 'Computer Science' ? 'bg-purple-200' : 
                         group.category === 'Mathematics' ? 'bg-green-200' : 
                         group.category === 'Physics' ? 'bg-red-200' : 'bg-gray-200'
                       }`}>
-                        {/* Bookmark icon */}
                         <button className="absolute top-2 right-2 text-gray-700">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -177,7 +163,6 @@ export default function Groups() {
                         </button>
                       </div>
                       
-                      {/* Category tag */}
                       <div className="px-4 py-4">
                         <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
                           group.category === 'Computer Science' ? 'bg-purple-500 text-white' : 
@@ -187,7 +172,6 @@ export default function Groups() {
                           {group.category || 'Study Group'}
                         </span>
                         
-                        {/* Group name */}
                         <h3 className="text-lg font-bold text-gray-800">{group.name}</h3>
                         {group.description && (
                           <p className="mt-1 text-sm text-gray-600 line-clamp-2">{group.description}</p>
@@ -195,9 +179,7 @@ export default function Groups() {
                       </div>
                     </div>
                     
-                    {/* Members and join button */}
                     <div className="px-4 pb-4 flex justify-between items-center">
-                      {/* Member avatars */}
                       <div className="flex -space-x-2 overflow-hidden">
                         {[...Array(Math.min(3, group.membersCount || 3))].map((_, i) => (
                           <div 
@@ -214,7 +196,6 @@ export default function Groups() {
                         )}
                       </div>
                       
-                      {/* Join button */}
                       <button 
                         onClick={() => handleJoinGroup(group)}
                         className="px-4 py-2 bg-[#ff5722] text-white rounded-md text-sm font-medium hover:bg-[#e64a19]"
@@ -229,7 +210,6 @@ export default function Groups() {
           </div>
         </div>
 
-        {/* Sidebar (25%) */}
         <div className="w-1/4">
           <div className="bg-white rounded-xl shadow-sm h-full p-4">
             <OnlineUsers />
@@ -237,7 +217,6 @@ export default function Groups() {
         </div>
       </div>
 
-      {/* Create Group Modal */}
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

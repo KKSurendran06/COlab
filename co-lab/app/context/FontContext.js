@@ -1,4 +1,3 @@
-// app/context/FontContext.js
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -11,7 +10,6 @@ export function FontContextProvider({ children }) {
   const [lineSpacing, setLineSpacing] = useState(1.5);
   const [highContrast, setHighContrast] = useState(false);
 
-  // Load preferences from localStorage on startup
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedFontSize = localStorage.getItem('fontSize');
@@ -26,7 +24,6 @@ export function FontContextProvider({ children }) {
     }
   }, []);
 
-  // Save preferences to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('fontSize', fontSize);
@@ -34,10 +31,8 @@ export function FontContextProvider({ children }) {
       localStorage.setItem('lineSpacing', lineSpacing.toString());
       localStorage.setItem('highContrast', highContrast.toString());
       
-      // Apply line spacing to body
       document.body.style.lineHeight = `${lineSpacing}`;
       
-      // Apply high contrast if enabled
       if (highContrast) {
         document.body.classList.add('high-contrast');
       } else {

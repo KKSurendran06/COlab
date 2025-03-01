@@ -1,4 +1,3 @@
-// app/context/AuthContext.js
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -28,7 +27,6 @@ export const AuthContextProvider = ({ children }) => {
       if (pointsDoc.exists()) {
         setUserPoints(pointsDoc.data().stars || 0);
       } else {
-        // If document doesn't exist yet, initialize it
         await setDoc(pointsRef, { stars: 0 });
         setUserPoints(0);
       }
@@ -60,7 +58,6 @@ export const AuthContextProvider = ({ children }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Initialize points document for new user
       await setDoc(doc(db, "points", userCredential.user.uid), {
         stars: 0
       });

@@ -18,5 +18,4 @@ function extractExperimentDetails() {
   }
 }
 
-// Run extraction when page loads
 extractExperimentDetails();

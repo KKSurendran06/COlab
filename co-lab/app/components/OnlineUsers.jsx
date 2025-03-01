@@ -10,13 +10,11 @@ export default function OnlineUsers() {
   
   useEffect(() => {
     setIsLoading(true);
-    // Set up listener for online users
     const unsubscribe = getOnlineUsers((users) => {
       setOnlineUsers(users);
       setIsLoading(false);
     });
     
-    // Clean up listener on component unmount
     return () => unsubscribe();
   }, []);
   
@@ -92,7 +90,6 @@ export default function OnlineUsers() {
   );
 }
 
-// Helper function to format time ago
 function timeAgo(timestamp) {
   if (!timestamp) return 'just now';
   
