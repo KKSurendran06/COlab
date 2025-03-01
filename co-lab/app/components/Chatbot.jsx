@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X, Loader2, ChevronDown, Mic, Volume2, StopCircle } from "lucide-react";
 
-export default function Chatbot() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function Chatbot({ embedded = false }) {
+  const [isOpen, setIsOpen] = useState(embedded ? true : false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +41,9 @@ export default function Chatbot() {
   }, [isPlaying]);
 
   const toggleChat = () => {
-    setIsOpen(!isOpen);
+    if (!embedded) {
+      setIsOpen(!isOpen);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -74,8 +76,6 @@ export default function Chatbot() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
         try {
-          
-          
           setInput("I'm speaking through the microphone"); 
           setMicInputUsed(true); 
           setIsRecording(false);
@@ -173,116 +173,131 @@ export default function Chatbot() {
     }
   };
 
+  const chatInterface = (
+    <>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 border-2 border-black py-3 flex justify-between items-center">
+        <div className="flex items-center">
+          <MessageCircle size={20} className="text-white mr-2" />
+          <h3 className="text-white font-medium">Assistant</h3>
+        </div>
+        {!embedded && (
+          <div className="flex items-center">
+            <button
+              className="text-white hover:bg-blue-700 p-1 rounded-full transition-colors mr-1"
+              onClick={toggleChat}
+              aria-label="Close chat"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="h-80 overflow-y-auto px-4 py-3 bg-black">
+        {messages.length === 0 ? (
+          <div className="text-center text-gray-500 mt-12 px-6">
+            <MessageCircle size={32} className="mx-auto mb-3 text-blue-500 opacity-50" />
+            <p className="text-sm">How can I help you today?</p>
+            <p className="text-xs mt-2">Type a message or use the microphone to speak.</p>
+          </div>
+        ) : (
+          messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex mb-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`px-4 py-3 rounded-2xl max-w-xs break-words text-sm ${
+                  msg.sender === "user"
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white border border-gray-200 shadow-sm text-gray-800 rounded-bl-none"
+                }`}
+              >
+                {msg.text}
+                {msg.sender === "bot" && (
+                  <button 
+                    onClick={() => isPlaying ? stopSpeaking() : speakText(msg.text)}
+                    className="ml-2 text-gray-500 hover:text-blue-600 inline-flex items-center"
+                    aria-label={isPlaying ? "Stop speaking" : "Speak message"}
+                  >
+                    {isPlaying ? <StopCircle size={14} /> : <Volume2 size={14} />}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        {isLoading && (
+          <div className="flex justify-start mb-3">
+            <div className="px-4 py-3 rounded-2xl max-w-xs bg-white border border-gray-200 shadow-sm rounded-bl-none">
+              <div className="flex items-center gap-2">
+                <Loader2 size={16} className="animate-spin text-blue-600" />
+                <span className="text-gray-500 text-sm">Thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="px-4 py-3 bg-black border-t border-gray-200">
+        <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all">
+          <input
+            ref={inputRef}
+            type="text"
+            className="flex-1 p-2 bg-transparent border-none outline-none text-sm text-gray-900 placeholder-gray-500"
+            placeholder="Type your message..."
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setMicInputUsed(false); 
+            }}
+            onKeyDown={handleKeyDown}
+          />
+          <button
+            className={`p-2 rounded-full transition-colors mr-1 ${
+              isRecording 
+                ? "bg-red-600 text-white animate-pulse" 
+                : "bg-gray-300 text-gray-600 hover:bg-gray-400"
+            }`}
+            onClick={toggleMic}
+            aria-label={isRecording ? "Stop recording" : "Start voice input"}
+          >
+            <Mic size={16} />
+          </button>
+          <button
+            className={`p-2 rounded-full transition-colors ${
+              input.trim()
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+            onClick={sendMessage}
+            disabled={!input.trim() || isLoading}
+            aria-label="Send message"
+          >
+            <Send size={16} className={input.trim() ? "" : "opacity-50"} />
+          </button>
+        </div>
+        <div className="text-xs text-center mt-2 text-gray-400">
+          Powered by Tech Codianzz 
+        </div>
+      </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="w-full bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
+        {chatInterface}
+      </div>
+    );
+  }
+
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
       {isOpen && (
         <div className="w-96 bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out transform">
-    
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-3 flex justify-between items-center">
-            <div className="flex items-center">
-              <MessageCircle size={20} className="text-white mr-2" />
-              <h3 className="text-white font-medium">Assistant</h3>
-            </div>
-            <div className="flex items-center">
-              <button
-                className="text-white hover:bg-blue-700 p-1 rounded-full transition-colors mr-1"
-                onClick={toggleChat}
-                aria-label="Close chat"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="h-80 overflow-y-auto px-4 py-3 bg-gray-50">
-            {messages.length === 0 ? (
-              <div className="text-center text-gray-500 mt-12 px-6">
-                <MessageCircle size={32} className="mx-auto mb-3 text-blue-500 opacity-50" />
-                <p className="text-sm">How can I help you today?</p>
-                <p className="text-xs mt-2">Type a message or use the microphone to speak.</p>
-              </div>
-            ) : (
-              messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex mb-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`px-4 py-3 rounded-2xl max-w-xs break-words text-sm ${
-                      msg.sender === "user"
-                        ? "bg-blue-600 text-white rounded-br-none"
-                        : "bg-white border border-gray-200 shadow-sm text-gray-800 rounded-bl-none"
-                    }`}
-                  >
-                    {msg.text}
-                    {msg.sender === "bot" && (
-                      <button 
-                        onClick={() => isPlaying ? stopSpeaking() : speakText(msg.text)}
-                        className="ml-2 text-gray-500 hover:text-blue-600 inline-flex items-center"
-                        aria-label={isPlaying ? "Stop speaking" : "Speak message"}
-                      >
-                        {isPlaying ? <StopCircle size={14} /> : <Volume2 size={14} />}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-            {isLoading && (
-              <div className="flex justify-start mb-3">
-                <div className="px-4 py-3 rounded-2xl max-w-xs bg-white border border-gray-200 shadow-sm rounded-bl-none">
-                  <div className="flex items-center gap-2">
-                    <Loader2 size={16} className="animate-spin text-blue-600" />
-                    <span className="text-gray-500 text-sm">Thinking...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="px-4 py-3 bg-white border-t border-gray-200">
-            <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all">
-              <input
-                ref={inputRef}
-                type="text"
-                className="flex-1 p-2 bg-transparent border-none outline-none text-sm text-gray-900 placeholder-gray-500"
-                placeholder="Type your message..."
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  setMicInputUsed(false); 
-                }}
-                onKeyDown={handleKeyDown}
-              />
-              <button
-                className={`p-2 rounded-full transition-colors mr-1 ${
-                  isRecording 
-                    ? "bg-red-600 text-white animate-pulse" 
-                    : "bg-gray-300 text-gray-600 hover:bg-gray-400"
-                }`}
-                onClick={toggleMic}
-                aria-label={isRecording ? "Stop recording" : "Start voice input"}
-              >
-                <Mic size={16} />
-              </button>
-              <button
-                className={`p-2 rounded-full transition-colors ${
-                  input.trim()
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-                onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
-                aria-label="Send message"
-              >
-                <Send size={16} className={input.trim() ? "" : "opacity-50"} />
-              </button>
-            </div>
-            <div className="text-xs text-center mt-2 text-gray-400">
-              Powered by Tech Codianzz 
-            </div>
-          </div>
+          {chatInterface}
         </div>
       )}
       <button

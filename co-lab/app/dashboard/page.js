@@ -17,8 +17,8 @@ import { setupPresence } from "../utils/presence";
 import LiveQuiz from "../components/QuizComponent";
 import DashboardLayout from "../components/sidebar";
 import { getAvailableGroups } from "../utils/groups";
-import AITutor from "../components/aitutor";
 import BrailleGenerator from "../components/braile";
+import Chatbot from "../components/Chatbot";
 
 export default function Dashboard() {
   const { user, logout, userPoints } = useAuth();
@@ -115,18 +115,16 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout activeItem="dashboard">
-      <div className="bg-white rounded-xl shadow-sm h-full p-10">
-        <nav className="bg-white rounded-xl z-10 mb-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-              <h1 className="text-xl text-black">
-  Welcome to <span className="font-bold text-[#ff5722]">COlaba AI</span>
-</h1>
+      <div className="bg-black rounded-xl shadow-sm h-full p-10">
+        <nav className="rounded-xl z-10 mb-6">
+          <div className="max-w-7xl ml-0 px-4 sm:px-6  lg:px-8">
+            <div className="flex justify-between h-16 ">
+              <div className="flex p-2">
+              <h1 className="text-4xl text-white">Welcome to <span className="font-bold  text-[#ff5722]">Colaba AI</span></h1>
 
               </div>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center  space-x-4 ml-auto">
                 <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -268,7 +266,7 @@ export default function Dashboard() {
               <div className="bg-white shadow-sm px-4 flex border border-gray-100 items-center rounded-xl mb-6">
                 <button
                   onClick={() => setSelectedGroup(null)}
-                  className="py-4 px-4 font-medium text-sm text-[#0066cc] flex items-center mr-4 hover:bg-gray-50 rounded-md"
+                  className="py-8 px-4 font-extrabold  text-[#0066cc] flex text-lg items-center mr-4 hover:bg-gray-50 rounded-md"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -288,67 +286,67 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("chat")}
-                  className={`py-4 px-4 font-medium text-sm ${
+                  className={`py-4 px-4 font-extrabold text-lg ${
                     activeTab === "chat"
-                      ? "text-[#0066cc] border-b-2 border-[#0066cc]"
-                      : "text-gray-600 hover:text-[#0066cc]"
+                      ? "text-[#ff5722] border-b-2 border-[#ff5722]"
+                      : "text-gray-600 hover:text-[#ff5722]"
                   }`}
                 >
                   Group Chat
                 </button>
                 <button
                   onClick={() => setActiveTab("whiteboard")}
-                  className={`py-4 px-4 font-medium text-sm ${
+                  className={`py-4 px-4 font-extrabold text-lg ${
                     activeTab === "whiteboard"
-                      ? "text-[#0066cc] border-b-2 border-[#0066cc]"
-                      : "text-gray-600 hover:text-[#0066cc]"
+                      ? "text-[#ff5722] border-b-2 border-[#ff5722]"
+                      : "text-gray-600 hover:text-[#ff5722]"
                   }`}
                 >
                   Whiteboard
                 </button>
                 <button
                   onClick={() => setActiveTab("video")}
-                  className={`py-4 px-4 font-medium text-sm ${
+                  className={`py-4 px-4 font-extrabold text-lg ${
                     activeTab === "video"
-                      ? "text-[#0066cc] border-b-2 border-[#0066cc]"
-                      : "text-gray-600 hover:text-[#0066cc]"
+                      ? "text-[#ff5722] border-b-2 border-[#ff5722]"
+                      : "text-gray-600 hover:text-[#ff5722]"
                   }`}
                 >
                   Video Call
                 </button>
                 <button
                   onClick={() => setActiveTab("notes")}
-                  className={`py-4 px-4 font-medium text-sm ${
+                  className={`py-4 px-4 font-extrabold text-lg ${
                     activeTab === "notes"
-                      ? "text-[#0066cc] border-b-2 border-[#0066cc]"
-                      : "text-gray-600 hover:text-[#0066cc]"
+                      ? "text-[#ff5722] border-b-2 border-[#ff5722]"
+                      : "text-gray-600 hover:text-[#ff5722]"
                   }`}
                 >
                   Notes
                 </button>
                 <button
                   onClick={() => setActiveTab("quiz")}
-                  className={`py-4 px-4 font-medium text-sm ${
+                  className={`py-4 px-4 font-extrabold text-lg ${
                     activeTab === "quiz"
-                      ? "text-[#ff9800] border-b-2 border-[#ff9800]"
-                      : "text-gray-600 hover:text-[#ff9800]"
+                      ? "text-[#ff5722] border-b-2 border-[#ff5722]"
+                      : "text-gray-600 hover:text-[#ff5722]"
                   }`}
                 >
                   Live Quiz
                 </button>
             <button
-              onClick={() => setActiveTab("braille")} // Show the AI Tutor component
-              className={`py-4 px-4 font-medium text-sm ${
-                activeTab === "quiz"
-                  ? "text-[#ff9800] border-b-2 border-[#ff9800]"
-                  : "text-gray-600 hover:text-[#ff9800]"
+              onClick={() => setActiveTab("braille")} 
+              className={`py-4 px-4 font-extrabold text-lg ${
+                activeTab === "braille"
+                  ? "text-[#ff5722] border-b-2 border-[#ff5722]"
+                  : "text-gray-600 hover:text-[#ff5722]"
               }`}
             >
               Braille Report
             </button>
               </div>
 
-              <div className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm h-[600px]">                {activeTab === "chat" && <GroupChat group={selectedGroup} />}
+              <div className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm h-[800px]">                {activeTab === "chat" && <GroupChat group={selectedGroup} />}
                 {activeTab === "whiteboard" && (
                   <Whiteboard groupId={selectedGroup.id} />
                 )}
@@ -365,12 +363,12 @@ export default function Dashboard() {
               </div>
             </>
           ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between bg-white p-6 rounded-xl ">
-                <h1 className="text-2xl font-bold text-gray-800">My Groups</h1>
+            <div className="space-y-6 p-8">
+              <div className="flex items-center justify-between bg-black border-2 border-white p-6 rounded-xl ">
+                <h1 className="text-2xl font-bold text-white">My Groups</h1>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className=" w-full border-black">
                 <UserGroups
                   asCards={true}
                   onSelectGroup={handleGroupSelect}
@@ -380,11 +378,11 @@ export default function Dashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                <div className="bg-white rounded-3xl shadow-sm overflow-hidden md:col-span-2 border-2 border-black">
+              <div className="grid grid-cols-1 md:grid-cols-3 h-full gap-4 mt-4">
+                <div className="bg-black rounded-3xl shadow-sm overflow-hidden border-white border-2">
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-lg font-semibold text-gray-800">
+                      <h2 className="text-lg font-semibold text-white">
                         My Groups
                       </h2>
                       <Link
@@ -397,7 +395,7 @@ export default function Dashboard() {
 
                     <table className="w-full">
                       <thead>
-                        <tr className="text-left text-gray-500 text-sm">
+                        <tr className="text-left text-white text-sm">
                           <th className="pb-2">Group</th>
                           <th className="pb-2">Subject</th>
                         </tr>
@@ -407,7 +405,7 @@ export default function Dashboard() {
                           <tr>
                             <td
                               colSpan="4"
-                              className="py-4 text-center text-gray-500"
+                              className="py-4 text-center text-white"
                             >
                               No groups available. Create one to get started!
                             </td>
@@ -421,13 +419,13 @@ export default function Dashboard() {
                             >
                               <td className="py-3">
                                 <div>
-                                  <p className="font-medium text-black ">
+                                  <p className="font-medium text-white ">
                                     {group.name}
                                   </p>
                                 </div>
                               </td>
                               <td className="py-4">
-                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                <span className="bg-red-800 text-white text-xs px-2 py-1 rounded-full">
                                   {group.subject}
                                 </span>
                               </td>
@@ -439,21 +437,21 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-[#333333] text-white rounded-xl shadow-sm overflow-hidden border border-[#444444]">
+                <div className="bg-black text-white rounded-3xl shadow-sm overflow-hidden border-2 border-white">
                   <div className="p-6">
-                    <h2 className="text-lg font-semibold mb-2">
+                    <h2 className="text-lg text-white font-semibold mb-4">
                       New group matching your interests
                     </h2>
 
-                    <div className="bg-[#444444] rounded-lg p-4 mt-4">
+                    <div className=" rounded-lg p-4 ">
                       {userGroups.length > 0 && (
                         <>
-                          <span className="inline-block px-3 py-1 bg-yellow-500 text-black text-xs font-medium rounded-full mb-2">
-                            {userGroups[0]?.subject || "Computer Science"}
-                          </span>
                           <h3 className="text-lg font-bold mb-3">
                             {userGroups[0]?.name ||
                               "Data Analysis Fundamentals"}
+                              <span className=" right-0 inline-block px-3 py-1 bg-red-800 text-white text-xs font-medium rounded-full mb-2">
+                            {userGroups[0]?.subject || "Computer Science"}
+                          </span>
                           </h3>
 
                           <div className="mt-3">
@@ -506,6 +504,10 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+                <div className="rounded-xl shadow-sm border-2 border-black">
+        <Chatbot embedded={true} />
+  </div>
+                
               </div>
             </div>
           )}
@@ -519,10 +521,10 @@ export default function Dashboard() {
       />
 
       {showFontSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full border-black border-2">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Accessibility Settings</h2>
+              <h2 className="text-xl text-black font-bold">Accessibility Settings</h2>
               <button
                 onClick={() => setShowFontSettings(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -552,40 +554,40 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => changeFontSize("small")}
-                    className={`px-3 py-1 rounded ${
+                    className={`px-3 py-1 rounded-md ${
                       fontSize === "small"
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-200"
+                        : "bg-gray-200 text-black"
                     }`}
                   >
                     Small
                   </button>
                   <button
                     onClick={() => changeFontSize("medium")}
-                    className={`px-3 py-1 rounded ${
+                    className={`px-3 py-1 rounded-md ${
                       fontSize === "medium"
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-200"
+                        : "bg-gray-200 text-black"
                     }`}
                   >
                     Medium
                   </button>
                   <button
                     onClick={() => changeFontSize("large")}
-                    className={`px-3 py-1 rounded ${
+                    className={`px-3 py-1 rounded-md ${
                       fontSize === "large"
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-200"
+                        : "bg-gray-200 text-black"
                     }`}
                   >
                     Large
                   </button>
                   <button
                     onClick={() => changeFontSize("x-large")}
-                    className={`px-3 py-1 rounded ${
+                    className={`px-3 py-1 rounded-md ${
                       fontSize === "x-large"
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-200"
+                        : "bg-gray-200 text-black"
                     }`}
                   >
                     X-Large
@@ -599,7 +601,7 @@ export default function Dashboard() {
                 </label>
                 <div className="flex items-center space-x-2">
                   <button
-                    className="p-2 rounded bg-gray-100 hover:bg-gray-200"
+                    className="p-2 rounded bg-gray-100 hover:bg-gray-200 text-black"
                     onClick={() =>
                       changeLineSpacing(Math.max(1, lineSpacing - 0.1))
                     }
@@ -626,10 +628,10 @@ export default function Dashboard() {
                     onChange={(e) =>
                       changeLineSpacing(parseFloat(e.target.value))
                     }
-                    className="w-full"
+                    className="w-full "
                   />
                   <button
-                    className="p-2 rounded bg-gray-100 hover:bg-gray-200"
+                    className="p-2 rounded bg-gray-100 hover:bg-gray-200 text-black"
                     onClick={() =>
                       changeLineSpacing(Math.min(3, lineSpacing + 0.1))
                     }
@@ -658,7 +660,7 @@ export default function Dashboard() {
                   Font Style
                 </label>
                 <select
-                  className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-[#ff5722] focus:border-[#ff5722]"
+                  className="block w-full py-2 px-3 border border-gray-300 text-black bg-white rounded-md shadow-sm focus:outline-none focus:ring-[#ff5722] focus:border-[#ff5722]"
                   value={fontFamily}
                   onChange={(e) => changeFontFamily(e.target.value)}
                 >
@@ -696,7 +698,7 @@ export default function Dashboard() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowFontSettings(false)}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md"
               >
                 Apply & Close
               </button>

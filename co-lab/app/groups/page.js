@@ -97,7 +97,7 @@ export default function Groups() {
                 <input
                   type="text"
                   placeholder="Search groups..."
-                  className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5722] focus:border-transparent"
+                  className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-200 text-black focus:outline-none focus:ring-2 focus:ring-[#ff5722] focus:border-transparent"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
