@@ -381,7 +381,7 @@ export default function Dashboard() {
                 )}
                 {activeTab === "notes" && <Notes groupId={selectedGroup.id} />}
                 {activeTab === "quiz" && (
-                  <LiveQuiz groupId={selectedGroup.id} />
+                  <LiveQuiz groupId={selectedGroup.name} />
                 )}
               </div>
             </>
