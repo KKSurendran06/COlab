@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 
-// Define Braille Dot Patterns
 const brailleMap = {
   a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑", f: "⠋", g: "⠛", h: "⠓", 
   i: "⠊", j: "⠚", k: "⠅", l: "⠇", m: "⠍", n: "⠝", o: "⠕", p: "⠏", 
@@ -11,7 +10,6 @@ const brailleMap = {
   "5": "⠑", "6": "⠋", "7": "⠛", "8": "⠓", "9": "⠊", "0": "⠚"
 };
 
-// Convert text to Braille format
 const convertToBraille = (text) => {
   return text
     .toLowerCase()
@@ -55,7 +53,6 @@ export default function BrailleGenerator({ query }) {
 
       setExplanation(data?.candidates?.[0]?.content?.parts?.[0]?.text || "No explanation available");
 
-      // Convert text to proper Braille representation
       setBrailleText(convertToBraille(query));
       setIsGenerated(true);
     } catch (error) {
@@ -67,43 +64,34 @@ export default function BrailleGenerator({ query }) {
   };
 
   const downloadPDF = () => {
-    // Create a canvas element to render the Braille text
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size - adjust based on your needs
     canvas.width = 500;
     canvas.height = 300;
     
-    // Set background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Render the Braille text
     ctx.font = '24px Arial';
     ctx.fillStyle = '#000000';
     ctx.fillText('Braille Output:', 20, 40);
     
-    // Add the Braille text
-    ctx.font = '24px "Arial Unicode MS", sans-serif'; // Use a font that supports Unicode
+    ctx.font = '24px "Arial Unicode MS", sans-serif'; 
     
-    // Create line breaks for long text
     const wrappedText = wrapText(ctx, brailleText, 460, 24);
     wrappedText.forEach((line, index) => {
       ctx.fillText(line, 20, 80 + (index * 30));
     });
     
-    // Create a new PDF
     const doc = new jsPDF();
     
-    // Add the canvas as an image to the PDF
     const imgData = canvas.toDataURL('image/png');
     doc.addImage(imgData, 'PNG', 10, 10, 190, 0);
     
     doc.save("braille_output.pdf");
   };
   
-  // Helper function to wrap text
   const wrapText = (ctx, text, maxWidth, lineHeight) => {
     const words = text.split(' ');
     const lines = [];
@@ -133,7 +121,6 @@ export default function BrailleGenerator({ query }) {
         </h1>
   
         <div className="bg-gradient-to-br from-gray-100 to-gray-200 shadow-2xl rounded-2xl overflow-hidden">
-          {/* Query Section */}
           <div className="bg-gray-300 text-black p-4">
             <p className="text-lg font-medium mb-2">Converting to Braille:</p>
             <p className="bg-gray-200 p-3 rounded-lg border border-gray-400 font-medium text-black">
@@ -141,7 +128,6 @@ export default function BrailleGenerator({ query }) {
             </p>
           </div>
   
-          {/* Action Buttons */}
           <div className="p-5 space-y-4">
             <button
               onClick={generateBraille}
@@ -181,10 +167,8 @@ export default function BrailleGenerator({ query }) {
             )}
           </div>
   
-          {/* Results Section */}
           {isGenerated && (
             <div className="p-5 pt-0 grid grid-cols-1 gap-4">
-              {/* Braille Output */}
               <div className="bg-white rounded-lg p-4 shadow-inner border border-gray-300">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-md font-bold text-gray-800">Braille Output:</p>
@@ -199,7 +183,6 @@ export default function BrailleGenerator({ query }) {
             </div>
           )}
 
-          {/* Footer */}
           <div className="bg-gray-300 p-3 text-center text-gray-700 text-sm">
             Making text accessible through Braille conversion
           </div>
