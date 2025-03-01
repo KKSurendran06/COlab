@@ -224,14 +224,17 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         console.log(`Deleted ${deletePromises.length} existing questions`);
       }
       
-      const prompt = `Generate a quiz with 5 multiple-choice questions about ${topic}. 
-        Format as a JSON array with objects containing:
+      const prompt = `Generate a quiz with 5 multiple-choice questions about ${groupId}.
+        Return ONLY a valid JSON array with no markdown formatting, code blocks, or explanatory text.
+        Each question object must contain:
         1. question (string)
         2. options (array of 4 strings)
         3. correctAnswer (integer 0-3 representing the index of the correct option)
         4. explanation (string explaining why the answer is correct)
         
-        Only return the JSON without any additional text or formatting.`;
+        Your entire response must be a parseable JSON array.`;
+      
+      console.log("Generated Prompt:", prompt);  
         
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC5JJ8UDOsoyVTIGZDFwvUdF0zV6liVHfs`,
@@ -249,17 +252,50 @@ export default function LiveQuiz({ groupId, topic, userId }) {
       }
       
       const data = await response.json();
-      console.log("Gemini API response:", data);
+      console.log("Gemini API raw response:", JSON.stringify(data));
       
-      // Handle the Gemini response structure correctly
+      // Handle the Gemini API response structure correctly
       let questions;
       try {
-        // The response might be directly in the text or it might need parsing
-        const responseText = data.contents?.[0]?.parts?.[0]?.text || '';
+        // Debug the response structure
+        let responseText = '';
         
-        // Try to extract JSON if there's any other text around it
-        const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-        const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+        // Check for different response structures
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+          // Handle structure with candidates
+          const content = data.candidates[0].content;
+          if (content.parts && content.parts[0] && content.parts[0].text) {
+            responseText = content.parts[0].text;
+          }
+        } else if (data.contents && data.contents[0] && data.contents[0].parts) {
+          // Handle structure with contents
+          const parts = data.contents[0].parts;
+          if (parts[0] && parts[0].text) {
+            responseText = parts[0].text;
+          }
+        } else if (data.text) {
+          // Simple structure with direct text
+          responseText = data.text;
+        }
+        
+        console.log("Extracted response text:", responseText);
+        
+        if (!responseText) {
+          console.error("Couldn't find text in response structure:", data);
+          throw new Error('Could not extract text from API response');
+        }
+        
+        // Clean up the text to ensure it's valid JSON
+        // Remove any markdown code blocks if present
+        let jsonString = responseText.replace(/```json|```/g, '').trim();
+        
+        // In case there's text before or after the JSON array
+        const jsonMatch = jsonString.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        if (jsonMatch) {
+          jsonString = jsonMatch[0];
+        }
+        
+        console.log("Attempting to parse JSON:", jsonString);
         
         questions = JSON.parse(jsonString);
         
@@ -270,7 +306,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
         console.log("Parsed questions:", questions);
       } catch (parseError) {
         console.error("Error parsing questions:", parseError);
-        console.log("Raw response:", data);
+        console.log("Failed to parse response from Gemini API");
         
         // Fallback questions in case API fails
         questions = [
@@ -579,7 +615,7 @@ export default function LiveQuiz({ groupId, topic, userId }) {
 
   return (
       <div className="max-w-4xl mx-auto p-6 bg-white shadow-xl rounded-lg">
-        <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Live Quiz: {topic}</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Live Quiz: {groupId}</h2>
         
         {/* Debug Info */}
         <div className="mb-4 p-3 bg-gray-50 border rounded-md text-xs text-gray-600">
