@@ -24,7 +24,7 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
   // If displayed as list (original format)
   if (!asCards) {
     return (
-      <div className={`${bgColor} rounded-xl shadow p-2 mb-6 border`}>
+      <div className={`${bgColor} rounded-lg shadow p-2 mb-6 border`}>
         <h3 className={`text-lg font-semibold mb-3 ${textColor}`}>Your Groups</h3>
         
         {userGroups.length === 0 ? (
@@ -152,3 +152,10 @@ export default function UserGroups({ onSelectGroup, activeGroupId, isDarkMode = 
     </>
   );
 }
+
+
+
+
+
+
+

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useFont } from "../context/FontContext";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import GroupList from "../components/GroupList";
 import GroupChat from "../components/GroupChat";
 import CreateGroupModal from "../components/CreateGroupModal";
@@ -38,6 +39,7 @@ export default function Dashboard() {
     changeLineSpacing,
     toggleHighContrast,
   } = useFont();
+  
   useEffect(() => {
     if (!user) {
       router.push("/login");
@@ -120,36 +122,10 @@ export default function Dashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
-                <h1 className="text-xl font-bold text-[#ff5722]">CO-LAB Ai</h1>
+              <h1 className="text-xl text-black">
+  Welcome to <span className="font-bold text-[#ff5722]">COlaba AI</span>
+</h1>
 
-                {/* Search bar */}
-                <div className="hidden md:block ml-6">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      className="pl-4 pr-10 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5722] focus:border-transparent"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <button className="absolute right-3 top-2.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
               </div>
 
               <div className="flex items-center space-x-4">
@@ -387,28 +363,8 @@ export default function Dashboard() {
             </>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center justify-between bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between bg-white p-6 rounded-xl ">
                 <h1 className="text-2xl font-bold text-gray-800">My Groups</h1>
-                <button
-                  onClick={handleCreateGroup}
-                  className="bg-[#0066cc] hover:bg-[#005bb8] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Create Group
-                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -430,12 +386,12 @@ export default function Dashboard() {
                       <h2 className="text-lg font-semibold text-gray-800">
                         My Groups
                       </h2>
-                      <a
-                        href="#"
+                      <Link
+                        href="/groups"
                         className="text-[#ff5722] text-sm font-medium hover:underline"
                       >
                         View all groups
-                      </a>
+                      </Link>
                     </div>
 
                     <table className="w-full">
@@ -522,7 +478,7 @@ export default function Dashboard() {
 
                           <button
                             onClick={() => handleGroupSelect(userGroups[0])}
-                            className="mt-6 w-full bg-[#ff5722] hover:bg-[#e64a19] text-white py- px-4 rounded-lg text-sm font-medium"
+                            className="mt-6 w-full bg-[#ff5722] hover:bg-[#e64a19] text-white py-3 px-4 rounded-lg text-sm font-medium"
                           >
                             Join Group
                           </button>
@@ -698,7 +654,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Current: {lineSpacing.toFixed(1)}
+                Current: {lineSpacing.toFixed(1)}
                 </p>
               </div>
 
