@@ -334,8 +334,7 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm">
-                {activeTab === "chat" && <GroupChat group={selectedGroup} />}
+              <div className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm h-[600px]">                {activeTab === "chat" && <GroupChat group={selectedGroup} />}
                 {activeTab === "whiteboard" && (
                   <Whiteboard groupId={selectedGroup.id} />
                 )}
