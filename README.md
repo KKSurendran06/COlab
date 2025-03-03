@@ -1,6 +1,6 @@
 # COlaba AI – Empowering Collaborative Learning with AI on Olabs 🚀
 
-### 🏆 Achievements
+### 🏆 Achievement
 COlaba AI won the **Runner-up Consolation Prize** in the **Olabs Hackathon**! 🎉
 Check out our project here: [Devfolio – COlaba AI](https://devfolio.co/projects/COlaba-ai-5397)
 
