@@ -75,6 +75,8 @@ Our project is divided into two key components:
   - **Dyslexia-friendly mode**: Option to change the entire site's font to **Dyslexia Friendly** for better readability.
   - **Screen reader support**: Redesigned the website with proper labels for seamless interaction with screen readers, to support visually imparired people to learn with ease.
   - **Braille output feature**: Provides experimental results in **Braille text** format, enabling visually impaired students to review results using a Braille machine.
+  - **Support for users with motor disabilities**: The entire site can be navigated and controlled via keyboard only interaction, eliminating the need for a mouse 
+
 
 ## 🌍 Goal: Transforming Education Through Collaboration
 
