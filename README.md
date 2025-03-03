@@ -1,5 +1,9 @@
 # COlaba AI – Empowering Collaborative Learning with AI on Olabs 🚀
 
+### 🏆 Achievements
+COlaba AI won the **Runner-up Consolation Prize** in the **Olabs Hackathon**! 🎉
+Check out our project here: [Devfolio – COlaba AI](https://devfolio.co/projects/COlaba-ai-5397)
+
 ## 🌟 Inspiration Behind the Name
 
 COlaba AI was born out of the Olabs Hackathon to address two critical challenges in the Olabs educational platform:
@@ -16,10 +20,6 @@ The name "COlaba AI" reflects our mission:
 ## 🚀 Our Mission
 
 While building COlaba AI, we aimed to bridge the educational divide in rural India by creating a platform that enables students with basic internet access to learn collaboratively. By integrating AI-driven tools and interactive features, we intended to make education accessible, engaging, and impactful for everyone. 🌍📚
-
-### 🏆 Achievements
-COlaba AI won the **Runner-up Consolation Prize** in the **Olabs Hackathon**! 🎉
-Check out our project here: [Devfolio – COlaba AI](https://devfolio.co/projects/COlaba-ai-5397)
 
 ## 🏗️ Project Structure
 
